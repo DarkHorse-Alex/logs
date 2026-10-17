@@ -746,7 +746,8 @@ async function checkHash(){
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   try{if(payload.includes('%'))payload=decodeURIComponent(payload)}catch(e){payload=payload.replace(/%[0-9A-F]{2}/gi,'')}
   try{await loadPayload(payload,name,'from link');return true}
-  catch(err){showRescue(`The link arrived damaged or cut (${payload.length.toLocaleString('en')} characters received). If the shortcut also copied the log, tap Paste log.`,err.message);return false}
+  catch(err){const tail=payload.length>60?payload.slice(0,24)+' … '+payload.slice(-24):payload;
+    showRescue(`The link arrived damaged or cut (${payload.length.toLocaleString('en')} characters received). If the shortcut also copied the log, tap Paste log.`,err.message+' · '+tail);return false}
 }
 function showRescue(msg,detail){$('#rescueMsg').textContent=msg;$('#rescueDetail').textContent=detail?('Details: '+detail):'';$('#rescue').hidden=false}
 async function pasteLog(){

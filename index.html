@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141c25">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}html,body{margin:0}[hidden]{display:none!important}</style>
+<title>DarkHorse Log Viewer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: instrument-panel app. Header (file) / pull chips / stacked synced lanes / bottom thumb bar with overview. */
+:root{
+  --bg:#e9edf1; --panel:#f8fafb; --ink:#14202c; --muted:#5a6a7b; --line:#d3dbe3; --grid:rgba(20,32,44,.07);
+  --accent:#c4520a; --accent-ink:#ffffff; --chip:#dfe5eb; --cursor:rgba(20,32,44,.55); --shade:rgba(233,237,241,.72);
+  --s0:#2462c9; --s1:#d0343a; --s2:#24863b; --s3:#7d45cf; --s4:#0b7d90; --s5:#b2730a; --s6:#bf2a6b; --s7:#4f6274;
+  --f-ui:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e141b; --panel:#141c25; --ink:#e3eaf1; --muted:#8797a8; --line:#24303d; --grid:rgba(227,234,241,.07);
+  --accent:#ff9a4d; --accent-ink:#1a0f05; --chip:#1d2732; --cursor:rgba(227,234,241,.6); --shade:rgba(14,20,27,.72);
+  --s0:#6ea2ff; --s1:#ff6b6b; --s2:#5fd37a; --s3:#b38cff; --s4:#3fc9de; --s5:#f2b440; --s6:#ff79b0; --s7:#9fb0c2;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141b; --panel:#141c25; --ink:#e3eaf1; --muted:#8797a8; --line:#24303d; --grid:rgba(227,234,241,.07);
+  --accent:#ff9a4d; --accent-ink:#1a0f05; --chip:#1d2732; --cursor:rgba(227,234,241,.6); --shade:rgba(14,20,27,.72);
+  --s0:#6ea2ff; --s1:#ff6b6b; --s2:#5fd37a; --s3:#b38cff; --s4:#3fc9de; --s5:#f2b440; --s6:#ff79b0; --s7:#9fb0c2;
+  color-scheme:dark}
+html{box-sizing:border-box}html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;display:flex;flex-direction:column;overflow:hidden;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.gut{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+@media (min-width:600px){.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}}
+
+header{display:flex;align-items:center;gap:10px;padding-block:8px 6px;background:var(--panel);border-bottom:1px solid var(--line)}
+.file{min-width:0;flex:1}
+.file b{display:block;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file small{display:block;color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:var(--accent);color:var(--accent-ink);margin-right:6px;vertical-align:1px}
+.btn{height:36px;padding:0 14px;border-radius:8px;background:var(--chip);font-weight:600;font-size:14.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn:active{transform:translateY(1px)}
+
+.readbar{display:flex;align-items:baseline;gap:12px;padding-block:5px;font-size:12.5px;color:var(--muted);background:var(--panel);border-bottom:1px solid var(--line)}
+.readbar .t{color:var(--ink);font-size:14px;font-weight:600}
+.pulls{display:flex;gap:6px;overflow-x:auto;padding-block:6px;scrollbar-width:none;flex:none}
+.pulls::-webkit-scrollbar{display:none}
+.pull{flex:none;height:30px;padding:0 10px;border-radius:15px;background:var(--chip);font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.pull .num{font-weight:400;font-size:12px;color:var(--muted)}
+.pull[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pull[aria-pressed="true"] .num{color:inherit;opacity:.75}
+
+#lanes{flex:1;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:6px}
+.lane{background:var(--panel);border-top:1px solid var(--line)}
+.lane:last-child{border-bottom:1px solid var(--line)}
+.lh{display:flex;flex-wrap:wrap;align-items:center;gap:2px 10px;padding-block:4px 0;min-height:26px}
+.tag{display:inline-flex;align-items:baseline;gap:5px;min-width:0;max-width:100%}
+.tag i{width:9px;height:9px;border-radius:2px;flex:none;align-self:center}
+.tag .nm{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+.tag .v{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-size:14.5px;font-weight:600}
+.tag .u{font-size:11.5px;color:var(--muted)}
+.tag .mx{font-family:var(--f-num);font-size:11px;color:var(--muted)}
+.lh .add{margin-left:auto;width:28px;height:24px;border-radius:6px;background:var(--chip);font-size:17px;line-height:1;color:var(--muted)}
+.lane canvas{display:block;width:100%}
+
+.bottom{flex:none;background:var(--panel);border-top:1px solid var(--line);padding-block:6px 8px}
+#ov{display:block;width:100%;height:38px;border-radius:6px;touch-action:none;background:var(--bg)}
+.tools{display:flex;gap:8px;margin-top:7px;flex-wrap:wrap}
+.tools .btn{flex:1;justify-content:center;min-width:0}
+
+#sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center}
+.card{background:var(--panel);width:100%;max-width:720px;max-height:86%;border-radius:14px 14px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+.card .head{display:flex;gap:8px;align-items:center;padding-block:12px 8px}
+.card h2{font-size:17px;font-weight:700;margin:0;flex:1;text-wrap:balance}
+#q{width:100%;height:40px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:15px var(--f-num);padding:0 12px}
+.presets{display:flex;gap:6px;flex-wrap:wrap;padding-block:8px}
+#chList{overflow-y:auto;flex:1;border-top:1px solid var(--line);padding-bottom:12px}
+.ch{display:grid;grid-template-columns:1fr auto;gap:0 10px;width:100%;text-align:left;padding:8px 0;border-bottom:1px solid var(--line)}
+.ch .a{font-family:var(--f-num);font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch .b{font-size:12px;color:var(--muted);grid-column:1/3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch .r{font-family:var(--f-num);font-size:11.5px;color:var(--muted);text-align:right}
+.ch.on .a{color:var(--accent);font-weight:600}
+.ch.on .a::before{content:"✓ "}
+.ch.flat{opacity:.5}
+.more{color:var(--muted);font-size:13px;padding:10px 0}
+
+#help{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center}
+#help .card{overflow-y:auto}
+.helpbody{padding-bottom:16px;font-size:15px;line-height:1.45;max-width:62ch}
+.helpbody p{margin:4px 0 10px}
+.steps{margin:0 0 12px;padding-left:22px;display:grid;gap:7px}
+.url{display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 6px 6px 10px}
+.url code{flex:1;min-width:0;font-size:13px;overflow-wrap:anywhere;user-select:all}
+.note{color:var(--muted);font-size:13.5px}
+.sub{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 6px}
+.sets{display:flex;gap:6px;flex-wrap:wrap}
+.set{height:auto;min-height:34px;padding:5px 12px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;gap:0;line-height:1.2}
+.set small{font-weight:400;font-size:11.5px;color:var(--muted);font-family:var(--f-num)}
+.imp{margin:8px 0 6px;cursor:pointer}
+#drop{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:var(--shade);font-size:22px;font-weight:700;border:3px dashed var(--accent)}
+#toast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:40;background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:14px;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){#toast{transition:opacity .2s}}
+</style>
+
+</head>
+<body>
+<header class="gut">
+  <div class="file"><b id="fname">—</b><small id="fmeta"></small></div>
+  <button class="btn" id="helpBtn" type="button">iPhone</button>
+  <button class="btn primary" id="openBtn" type="button" aria-label="Открыть лог">Открыть</button>
+  <input id="file" type="file" accept=".csv,.txt,.log,text/csv,text/plain" hidden>
+</header>
+<div class="readbar gut"><span class="t num" id="tcur">t —</span><span class="num" id="twin"></span></div>
+<div class="pulls gut" id="pulls"></div>
+<div id="lanes"></div>
+<div class="bottom gut">
+  <canvas id="ov" aria-label="Обзор всего лога"></canvas>
+  <div class="tools">
+    <button class="btn" id="addLane" type="button">+ Дорожка</button>
+    <button class="btn" id="presetBtn" type="button">Пресет</button>
+    <button class="btn" id="fitBtn" type="button">Весь лог</button>
+  </div>
+</div>
+
+<div id="sheet" hidden>
+  <div class="card gut" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="head"><h2 id="sheetTitle">Каналы</h2><button class="btn primary" id="sheetDone" type="button">Готово</button></div>
+    <input id="q" type="search" placeholder="Поиск: nmot, pvds, lambda, boost…" autocomplete="off" spellcheck="false">
+    <div class="presets" id="presetRow"></div>
+    <div id="setBox" hidden>
+      <h3 class="sub">Наборы из CSVLog</h3>
+      <div class="sets" id="setRow"></div>
+      <label class="btn imp">Импорт settings.json из CSVLog<input id="setFile" type="file" accept=".json,application/json,text/plain" hidden></label>
+    </div>
+    <div id="chList"></div>
+  </div>
+</div>
+<div id="help" hidden>
+  <div class="card gut" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="head"><h2 id="helpTitle">Логи с iPhone в два тапа</h2><button class="btn primary" id="helpDone" type="button">Готово</button></div>
+    <div class="helpbody">
+      <p>Один раз собери быструю команду. После этого в Telegram, WhatsApp или Почте: <b>Поделиться → Логи</b>, и лог открывается здесь.</p>
+      <ol class="steps">
+        <li>Открой приложение <b>Команды</b> → <b>+</b>. Назови команду <b>Логи</b>.</li>
+        <li>Нажми <b>ⓘ</b> внизу → включи <b>Показывать в меню «Поделиться»</b>. Типы: оставь <b>Файлы</b>.</li>
+        <li>Добавь действие <b>Создать архив</b> (Make Archive): на входе «Входные данные Быстрой команды», формат <b>.gz</b>.</li>
+        <li>Добавь <b>Кодировать Base64</b> (Base64 Encode), разрывы строк: <b>Нет</b>.</li>
+        <li>Добавь <b>Текст</b> (Text): вставь адрес ниже и сразу за ним, без пробела, переменную из шага 4.</li>
+        <li>Добавь <b>Открыть URL</b> (Open URLs) с этим текстом.</li>
+      </ol>
+      <div class="url"><code id="helpUrl" class="num"></code><button class="btn" id="copyUrl" type="button">Копировать</button></div>
+      <p class="note" id="helpNote"></p>
+      <p class="note">Лог передаётся внутри ссылки и разбирается на телефоне. На сервер он не уходит.</p>
+    </div>
+  </div>
+</div>
+<div id="drop" hidden>Отпусти файл лога</div>
+<div id="toast" hidden></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const NUMRE=/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
+const S={log:null,lanes:[],v0:0,v1:1,cur:null,sample:false,pull:-1,target:null,platform:'gen'};
+let dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1)), COL=[], TOK={};
+
+/* ---------- storage helpers (all optional) ---------- */
+const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const idb={
+  open(){return new Promise((res,rej)=>{try{const r=indexedDB.open('dh-logview',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}})},
+  async put(v){try{const db=await this.open();db.transaction('f','readwrite').objectStore('f').put(v,'last')}catch(e){}},
+  async get(){try{const db=await this.open();return await new Promise(res=>{const q=db.transaction('f').objectStore('f').get('last');q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})}catch(e){return null}}
+};
+
+/* ---------- parsing ---------- */
+function decode(buf){
+  const b=new Uint8Array(buf);
+  if(b[0]===0xFF&&b[1]===0xFE) return new TextDecoder('utf-16le').decode(buf);
+  if(b[0]===0xFE&&b[1]===0xFF) return new TextDecoder('utf-16be').decode(buf);
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){}
+  try{return new TextDecoder('windows-1252').decode(buf)}catch(e){return new TextDecoder().decode(buf)}
+}
+function splitLine(line,d){
+  if(line.indexOf('"')<0) return line.split(d);
+  const out=[];let cur='',q=false;
+  for(let i=0;i<line.length;i++){const c=line[i];
+    if(q){if(c==='"'){if(line[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true; else if(c===d){out.push(cur);cur=''} else cur+=c}
+  out.push(cur);return out;
+}
+const UNITMAP={'grad kw':'°KW','grad c':'°C','deg c':'°C','*c':'°C','a°c':'°C','°c':'°C','grad':'°','*':'°','1/min':'rpm'};
+function normUnit(u){u=(u||'').trim();const m=UNITMAP[u.toLowerCase()];return m||u}
+function parseLog(text,name){
+  text=text.replace(/^﻿/,'');
+  const lines=text.split(/\r?\n/).filter(l=>l.trim()!=='');
+  if(lines.length<3) throw new Error('В файле меньше трёх строк');
+  const cand=lines.slice(0,15);
+  let d=',',best=-1,bestF=-1;
+  for(const dd of [',',';','\t']){
+    const cnt=cand.map(l=>splitLine(l,dd).length),freq=new Map();cnt.forEach(c=>freq.set(c,(freq.get(c)||0)+1));
+    let m=1,mf=0;for(const [c,f] of freq)if(c>=2&&(f>mf||(f===mf&&c>m))){m=c;mf=f}
+    const fr=mf/cnt.length;if(m<2)continue;
+    if(fr>bestF+0.2||(Math.abs(fr-bestF)<=0.2&&m>best)){best=m;bestF=fr;d=dd}}
+  if(best<2) throw new Error('Не нашёл разделитель столбцов');
+  let hi=cand.findIndex(l=>l.split(d).length>=best*0.6);
+  const dc=d!==',';
+  const isNum=s=>{s=(s||'').trim();if(dc)s=s.replace(',','.');return NUMRE.test(s)};
+  const header=splitLine(lines[hi],d).map(s=>s.trim());
+  let r=hi+1;const extra=[];
+  while(r<lines.length&&extra.length<3&&!isNum(splitLine(lines[r],d)[0])){extra.push(splitLine(lines[r],d));r++}
+  let descRow=null,unitRow=null;
+  if(extra.length>=2){descRow=extra[0];unitRow=extra[1]}
+  else if(extra.length===1){const c=extra[0].filter(s=>s.trim());const avg=c.reduce((a,s)=>a+s.length,0)/Math.max(1,c.length);if(avg<=7)unitRow=extra[0];else descRow=extra[0]}
+  let tc=header.findIndex(h=>/^(time|timestamp|zeit|elapsed|t)\b|^time\s*[\[(]|timestamp/i.test(h));
+  if(tc<0)tc=0;
+  const cols=header.map((h,i)=>{
+    let nm=h,unit='';let m=h.match(/^(.*?)\s*\[([^\]]*)\]\s*$/);
+    if(m){nm=m[1].trim();unit=m[2]}else{m=h.match(/^(.*?)\s*\(([^()]{1,8})\)\s*$/);if(m){nm=m[1].trim();unit=m[2]}}
+    if(!unit&&unitRow&&unitRow[i])unit=unitRow[i];
+    return {name:nm||('col'+(i+1)),unit:normUnit(unit),rawUnit:unit.trim(),desc:descRow?(descRow[i]||'').trim():'',i};
+  });
+  const n=lines.length-r,nc=cols.length;
+  const T=new Float64Array(n),D=cols.map(()=>new Float64Array(n).fill(NaN)),TX=new Array(nc).fill(null);
+  const nN=new Int32Array(nc),nT=new Int32Array(nc);
+  let k=0;
+  for(;r<lines.length;r++){
+    const c=splitLine(lines[r],d);let ts=c[tc];if(ts===undefined)continue;ts=ts.trim();if(dc)ts=ts.replace(',','.');
+    if(!NUMRE.test(ts))continue;T[k]=+ts;
+    for(let j=0;j<nc;j++){if(j===tc)continue;let s=c[j];if(s===undefined||s==='')continue;s=s.trim();if(s==='')continue;
+      const s2=dc?s.replace(',','.'):s;
+      if(NUMRE.test(s2)){D[j][k]=+s2;nN[j]++}else{if(!TX[j])TX[j]=new Array(n);TX[j][k]=s;nT[j]++}}
+    k++;
+  }
+  if(k<2) throw new Error('Нет строк с числовым временем в первом столбце');
+  let t=T.subarray(0,k);
+  // time unit
+  const tcol=cols[tc];let diffs=[];for(let i=1;i<k&&diffs.length<2000;i+=Math.max(1,Math.floor(k/2000)))diffs.push(t[i]-t[i-1]);
+  diffs.sort((a,b)=>a-b);let med=diffs[diffs.length>>1]||0;
+  const isMs=/ms/i.test(tcol.rawUnit)||/\bms\b|\[ms\]/i.test(header[tc])||(!/^s$/i.test(tcol.rawUnit)&&med>=5);
+  const sc=isMs?0.001:1,t0=t[0];
+  const time=new Float64Array(k);
+  for(let i=0;i<k;i++){let v=(t[i]-t0)*sc;if(i&&v<time[i-1])v=time[i-1];time[i]=v}
+  med*=sc;
+  const out=[];
+  for(let j=0;j<nc;j++){if(j===tc)continue;
+    const c=cols[j];if(nN[j]===0&&nT[j]===0)continue;
+    let a=D[j].subarray(0,k),cats=null;
+    if(nT[j]>nN[j]){ // categorical
+      cats=[];const idx=new Map();a=new Float64Array(k).fill(NaN);
+      for(let i=0;i<k;i++){let s=TX[j][i];if(s===undefined){const v=D[j][i];if(v===v)s=String(v);else continue}
+        let id=idx.get(s);if(id===undefined){id=cats.length;cats.push(s);idx.set(s,id)}a[i]=id}
+    }else a=Float64Array.from(a);
+    let last=NaN,mn=Infinity,mx=-Infinity;
+    for(let i=0;i<k;i++){const v=a[i];if(v!==v)a[i]=last;else{last=v;if(v<mn)mn=v;if(v>mx)mx=v}}
+    if(mn===Infinity)continue;
+    out.push({name:c.name,unit:c.unit,desc:c.desc,data:a,cats,min:mn,max:mx,flat:mx===mn,bits:/LimSrc|_st_tq|EmiTqLim|_ul$/i.test(c.name),
+      step:!!cats||/gear|gang|nrAct|^st|_st|stat|^num|_num|mode|flag|^B_|switch|swt/i.test(c.name)});
+  }
+  return {name,t:time,cols:out,dt:med,dur:time[k-1]};
+}
+
+/* ---------- presets ---------- */
+const P=(...a)=>a; const ALL=re=>({all:re});
+const RPM_RE=/^(nmot_w|nmot|nmot_loc|Epm_nEng|RPM|Engine RPM|Engine speed|Engine Speed \(RPM\)|Motordrehzahl)$/i;
+const PRESETS={
+  mhd:{label:'BMW MHD',test:c=>c.some(x=>/^RPM$/i.test(x.name))&&c.some(x=>/^Boost/i.test(x.name)),lanes:[
+    P(/^RPM$/i,/^Gear$/i),
+    P(/^Boost$/i,/^Boost target( RAM)?$/i,/^Boost \(mani\)$/i),
+    P(/^Load act/i,/^Load req/i),
+    P(/^Lambda 1$|^Lambda act/i,/^Lambda target/i),
+    ALL(/(ign|timing)\.?\s*corr|knock/i),
+    ALL(/^Timing Cyl/i),
+    P(/^WGDC/i,/^Raw pos\. EWG/i),
+    P(/^Accel/i,/^Throttle/i),
+    P(/^Rail pressure mean/i,/^Rail pressure req/i),
+    P(/^Torque act/i,/^Torque req/i),
+    P(/^IAT$|^Charge air temp/i)]},
+  bmwbosch:{label:'BMW Bosch',test:c=>c.some(x=>/^(nmot_loc|Rf_soll|Mdk_soll)$|^BMW/i.test(x.name)),lanes:[
+    P(/^(nmot_loc|nmot_w|Epm_nEng)$/i,/^(gangist_msg|gangi_msg|gangi)$/i),
+    P(/^(BMWtchsp_p_Req_uw|psolldr_w|pvds_w(_msg)?)$/i,/^pvdr_w(_msg)?$/i,/^ps_w_msg$/i),
+    P(/^Rf_soll$/i,/^Rf_max_pldmax$/i,/^Rf_mdk_max$/i,/^(rl_msg|rl_w)$/i),
+    P(/^Mdk_soll$/i,/^Mdg_max_gs$/i,/^milsol_w(_msg)?$/i,/^mkist_w_msg$/i),
+    P(/LimSrc/i),
+    P(/^lamsons_w(_msg)?$/i,/^(lamsonb_w(_msg)?|UEGO_rLamS1B1|lamsoni_w)$/i),
+    ALL(/^(BasSvrAppl_AusZun|IKCtl_agKnkInt_as8\[\d\]|wkr)/i),
+    P(/^(Zw_soll|Zw_out|zwout(zyl)?_w(_msg)?(\[0\])?)$/i),
+    P(/^(Wdk_ist|wdks_msg|wdk_w(_msg)?)$/i,/^(APP_r|AccP_r_VW)$/i),
+    P(/^(Prail_soll|FuPHi_pRailSp)$/i,/^FuPHi_pRail$/i,/^dwmsvd_w(_msg)?$/i)]},
+  bosch:{label:'Bosch / VAG',test:c=>c.some(x=>/^(nmot_w|nmot|Epm_nEng)$/i.test(x.name)||/_w_msg$/.test(x.name)),lanes:[
+    P(/^(nmot_w|nmot|Epm_nEng|Engine RPM)$/i,/nrActGear|^gangi/i),
+    P(/^(pvds_w(_msg)?|psolldr_w|pbksoll_w(_msg)?)$/i,/^(pvdr_w(_msg)?|pvdkds_w|pvd_w)$/i,/^pvdr2_w(_msg)?$/i,/^pvdxs_w/i),
+    P(/^rl_(w|msg)(_msg)?$/i,/^rlsol_w(_msg)?$/i,/^rlmxs_w(_msg)?$/i),
+    P(/^lamsons_w(_msg)?$/i,/^(lamsonb_w(_msg)?|lamsoni_w(_msg)?|UEGO_rLamS1B1)$/i,/^lamsons2_w(_msg)?$/i,/^(lamsonb2_w(_msg)?|lamsoni2_w(_msg)?)$/i),
+    ALL(/^IKCtl_agKnkInt_as8\[\d\]$|^wkr_?\w*\[\d\]|^BasSvrAppl_AusZun|^dwkrz/i),
+    P(/^zwout(zyl)?_w(_msg)?(\[0\])?$|^zwist|^zwout|^Ignition Timing/i),
+    P(/^(wdk_w(_msg)?|wdks_msg|Absolute Throttle Position)$/i,/^(AccP_r_VW|APP_r|wped_w|wped)$/i),
+    P(/^(tvldste_w(_msg)?|tvldst_w)$|^ldtv/i,/^tvldste2_w/i,/^TrbCh_ratActPosnB1$/i,/^lepwmbks_w(_msg)?$/i),
+    P(/^(prist_w(_msg)?|FuPHi_pRail)$/i,/^(prsoll_w(_msg)?|FuPHi_pRailSp)$/i,/^prist2_w(_msg)?$/i),
+    P(/^dwmsvd_w(_msg)?$/i,/^dwmsvd2_w(_msg)?$/i),
+    P(/^InjSys_tiInjSum$|^Einspritzzeit/i),
+    P(/^(FuelP_pAct|pistndr_w(_msg)?)$/i),
+    P(/^tans(_msg|_w)?$/i,/^tmot(_msg)?$/i)]},
+  named:{label:'Autotuner / MG / BM3',test:()=>false,lanes:[
+    P(RPM_RE,/gear/i),
+    P(/boost.*(act|pre-throttle)|^boost( pressure)?$/i,/boost.*(target|setpoint|set ?point|desired)/i),
+    P(/^load|relative load|charge/i,/load.*(target|req|setpoint)/i),
+    P(/lambda.*(act|bank 1)|^lambda$|^afr/i,/lambda.*(target|setpoint|req)/i),
+    ALL(/(timing|ignition|spark).*(corr|retard|knock)|knock/i),
+    P(/^(ignition|timing|spark)/i),
+    P(/^(WG|wastegate|WGDC)/i),
+    P(/pedal|accel/i,/throttle/i),
+    P(/(rail|high).*pressure(?!.*(target|setpoint))/i,/(rail|high).*pressure.*(target|setpoint)/i),
+    P(/IAT|intake air/i),
+    P(/trim/i)]},
+};
+function shortKey(n){return n}
+function buildPreset(log,key,noFallback){
+  const cols=log.cols,used=new Set(),lanes=[];
+  const p=PRESETS[key];
+  if(p){for(const L of p.lanes){
+    let ids=[];
+    if(L.all){cols.forEach((c,i)=>{if(L.all.test(c.name)&&!used.has(i)&&ids.length<8)ids.push(i)})}
+    else for(const re of L){const i=cols.findIndex((c,j)=>!used.has(j)&&re.test(c.name));if(i>=0)ids.push(i)}
+        if(ids.length){ids.forEach(i=>used.add(i));lanes.push(ids)}
+  }}
+  if(noFallback)return lanes;
+  if(lanes.length<2){ // generic: first lively channels, rpm first
+    const order=cols.map((c,i)=>i).filter(i=>!cols[i].flat&&!used.has(i));
+    const rpm=order.find(i=>/rpm|nmot|drehzahl|engine speed/i.test(cols[i].name));
+    const pick=(rpm!==undefined?[rpm]:[]).concat(order.filter(i=>i!==rpm)).slice(0,6-lanes.length);
+    pick.forEach(i=>lanes.push([i]));
+    if(!lanes.length)cols.slice(0,6).forEach((c,i)=>lanes.push([i]));
+  }
+  return lanes;
+}
+function detectPlatform(log){for(const k of Object.keys(PRESETS))if(PRESETS[k].test(log.cols))return k;
+  if(buildPreset(log,'named',true).length>=2)return 'named';return 'gen'}
+
+/* ---------- pulls (WOT segments) ---------- */
+function findPulls(log){
+  const c=log.cols.find(x=>/^(AccP_r_VW|APP_r|wped_w|wped|Accel Ped.*|Accel.*|accelerator.*|pedal.*|.*pedal position.*)$/i.test(x.name)&&!x.flat);
+  if(!c)return [];
+  const thr=c.max<=1.05?0.9:90,t=log.t,a=c.data,segs=[];let s=-1;
+  for(let i=0;i<t.length;i++){const on=a[i]>=thr;if(on&&s<0)s=i;if((!on||i===t.length-1)&&s>=0){segs.push([s,on?i:i-1]);s=-1}}
+  const merged=[];for(const g of segs){const p=merged[merged.length-1];if(p&&t[g[0]]-t[p[1]]<0.35)p[1]=g[1];else merged.push(g.slice())}
+  const rpm=log.cols.find(x=>RPM_RE.test(x.name));
+  const gear=log.cols.find(x=>/nrActGear|^gangi|^gangist|^Gear$/i.test(x.name));
+  return merged.filter(g=>t[g[1]]-t[g[0]]>=1.2).map(g=>{
+    const mid=(g[0]+g[1])>>1;
+    return {t0:t[g[0]],t1:t[g[1]],r0:rpm?rpm.data[g[0]]:NaN,r1:rpm?rpm.data[g[1]]:NaN,gear:gear?gear.data[mid]:NaN}});
+}
+
+/* ---------- formatting ---------- */
+function fmt(v,c){
+  if(v!==v)return '—';
+  if(c&&c.cats)return c.cats[Math.round(v)]??'—';
+  if(c&&c.bits&&v>0&&Number.isInteger(v)){const b=[];for(let i=0;i<32;i++)if(Math.floor(v/2**i)%2)b.push(i);return v+' [b'+b.join(',')+']'}
+  const a=Math.abs(v);if(Number.isInteger(v)&&a<100000)return String(v);
+  return a>=1000?v.toFixed(0):a>=100?v.toFixed(1):a>=10?v.toFixed(1):a>=1?v.toFixed(2):v.toFixed(3);
+}
+function fmtT(t){return t>=600?`${Math.floor(t/60)}:${(t%60).toFixed(1).padStart(4,'0')}`:t.toFixed(2)+' s'}
+function lb(t,x){let lo=0,hi=t.length;while(lo<hi){const m=(lo+hi)>>1;if(t[m]<x)lo=m+1;else hi=m}return lo}
+function valAt(c,t,x){if(!c)return NaN;let i=lb(t,x);if(i>=t.length)i=t.length-1;if(i>0&&x-t[i-1]<t[i]-x)i--;return c.data[i]}
+function ticks(a,b,n){const sp=b-a;if(!(sp>0))return[a];const s0=sp/n,mag=10**Math.floor(Math.log10(s0)),r=s0/mag;const st=(r<1.5?1:r<3?2:r<7?5:10)*mag;const o=[];for(let v=Math.ceil(a/st)*st;v<=b+st*1e-6;v+=st)o.push(+v.toFixed(10));return o}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- theme tokens ---------- */
+function readTokens(){const cs=getComputedStyle(document.documentElement);COL=[0,1,2,3,4,5,6,7].map(i=>cs.getPropertyValue('--s'+i).trim());
+  for(const k of ['ink','muted','line','grid','accent','panel','bg','cursor','shade'])TOK[k]=cs.getPropertyValue('--'+k).trim()}
+
+/* ---------- lanes DOM ---------- */
+const lanesEl=$('#lanes');let laneObjs=[];
+const ALIAS=[[/^CoEng_nrActGearHem$|^gangi(_msg)?$/i,'gear'],[/^IKCtl_agKnkInt_as8(\[\d\])$/i,'KR$1'],[/^AccP_r_VW$|^APP_r$/i,'pedal'],[/^CHdT_vVehloc$|^VehV_v$/i,'speed'],[/^Epm_nEng$/i,'nmot'],[/^zwoutzyl_w_msg(\[\d\])$/i,'zw$1']];
+function shortName(n){for(const [re,a] of ALIAS)if(re.test(n))return n.replace(re,a);return n.replace(/(_w)?_msg$|_w$/,'')}
+function laneLabel(lane,k){
+  const c=S.log.cols[lane[k]],sn=shortName(c.name),m=sn.match(/^(.*)(\[\d+\])$/);
+  if(m&&k>0){const prev=shortName(S.log.cols[lane[k-1]].name);if(prev.startsWith(m[1]+'['))return m[2]}
+  return sn;
+}
+function buildLanes(){
+  lanesEl.innerHTML='';laneObjs=[];
+  S.lanes.forEach((lane,li)=>{
+    const el=document.createElement('section');el.className='lane';
+    const h=document.createElement('div');h.className='lh gut';
+    lane.forEach((ci,k)=>{const c=S.log.cols[ci];
+      const t=document.createElement('span');t.className='tag';
+      t.innerHTML=`<i style="background:var(--s${k%8})"></i><span class="nm" title="${esc(c.name+(c.desc?' — '+c.desc:''))}">${esc(laneLabel(lane,k))}</span><span class="v">—</span><span class="u">${esc(c.unit==='-'?'':c.unit)}</span><span class="mx"></span>`;
+      h.appendChild(t)});
+    const add=document.createElement('button');add.className='add';add.type='button';add.textContent='+';add.setAttribute('aria-label','Изменить каналы этой дорожки');
+    add.onclick=()=>openSheet(li);h.appendChild(add);
+    const cv=document.createElement('canvas');
+    el.append(h,cv);lanesEl.appendChild(el);
+    laneObjs.push({el,h,cv,ctx:cv.getContext('2d'),lane,vals:[...h.querySelectorAll('.v')],mxs:[...h.querySelectorAll('.mx')],w:0,h0:0,stats:[]});
+  });
+  if(!S.lanes.length){lanesEl.innerHTML='<p class="gut" style="color:var(--muted);padding-block:24px">Дорожек нет. Нажми «+ Дорожка» или «Пресет».</p>'}
+  layout();
+}
+function layout(){
+  const n=laneObjs.length;if(!n)return;
+  const W=lanesEl.clientWidth,H=lanesEl.clientHeight;
+  const heads=laneObjs.reduce((a,L)=>a+L.h.offsetHeight+1,0);
+  const ch=Math.max(84,Math.floor((H-heads-8)/n));
+  laneObjs.forEach((L,i)=>{const h=ch+(i===n-1?14:0);L.w=W;L.h0=h;L.cv.style.height=h+'px';L.cv.width=Math.round(W*dpr);L.cv.height=Math.round(h*dpr)});
+  const ov=$('#ov');ov.width=Math.round(ov.clientWidth*dpr);ov.height=Math.round(ov.clientHeight*dpr);
+  render();
+}
+
+/* ---------- drawing ---------- */
+let raf=0;function render(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()})}
+function draw(){
+  if(!S.log)return;const t=S.log.t;
+  const i0=Math.max(0,lb(t,S.v0)-1),i1=Math.min(t.length,lb(t,S.v1)+2);
+  const xt=ticks(S.v0,S.v1,Math.max(3,Math.round((laneObjs[0]?.w||360)/90)));
+  laneObjs.forEach((L,li)=>drawLane(L,i0,i1,xt,li===laneObjs.length-1));
+  drawOverview();updateRead();
+}
+function drawLane(L,i0,i1,xt,last){
+  const {ctx,lane}=L,w=L.w,h=L.h0,t=S.log.t,cols=S.log.cols;
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const pt=6,pb=last?18:5,ph=h-pt-pb,span=S.v1-S.v0;
+  const X=v=>(v-S.v0)/span*w;
+  // ranges in window
+  const rg=lane.map(ci=>{const a=cols[ci].data;let mn=Infinity,mx=-Infinity;for(let i=i0;i<i1;i++){const v=a[i];if(v<mn)mn=v;if(v>mx)mx=v}return[mn,mx]});
+  L.stats=rg;
+  let gmn=Math.min(...rg.map(r=>r[0])),gmx=Math.max(...rg.map(r=>r[1]));
+  const spans=rg.map(r=>Math.max(r[1]-r[0],Math.abs(r[1])*1e-3,1e-9));
+  const indep=lane.length>1&&(Math.max(...spans)/Math.min(...spans)>6||rg.some(r=>r[1]<gmn||r[0]>gmx));
+  const mkY=(mn,mx)=>{if(!(mx>mn)){const p=Math.abs(mn)*0.05||1;mn-=p;mx+=p}const pad=(mx-mn)*0.06;mn-=pad;mx+=pad;return v=>pt+(1-(v-mn)/(mx-mn))*ph};
+  // grid
+  ctx.strokeStyle=TOK.grid;ctx.lineWidth=1;ctx.beginPath();
+  for(const v of xt){const x=Math.round(X(v))+0.5;ctx.moveTo(x,pt);ctx.lineTo(x,pt+ph)}
+  const yr=indep?rg[0]:[gmn,gmx];const Yg=mkY(yr[0],yr[1]);
+  const yt=cols[lane[0]].cats?[]:ticks(yr[0],yr[1],ph>110?4:3);
+  for(const v of yt){const y=Math.round(Yg(v))+0.5;if(y<pt||y>pt+ph)continue;ctx.moveTo(0,y);ctx.lineTo(w,y)}
+  ctx.stroke();
+  ctx.font=`10.5px ${getComputedStyle(document.body).getPropertyValue('--f-num')}`;ctx.fillStyle=TOK.muted;ctx.textBaseline='middle';
+  const ystep=yt.length>1?yt[1]-yt[0]:1,ydec=Math.max(0,Math.min(4,-Math.floor(Math.log10(ystep)+1e-9)));
+  const lx=window.innerWidth>=600?16:12;
+  for(const v of yt){const y=Yg(v);if(y<pt+6||y>pt+ph-4)continue;const s=v.toFixed(ydec),tw=ctx.measureText(s).width;
+    ctx.fillStyle=TOK.panel;ctx.globalAlpha=.8;ctx.fillRect(lx-2,y-12,tw+4,12);ctx.globalAlpha=1;ctx.fillStyle=TOK.muted;ctx.fillText(s,lx,y-6)}
+  if(last){ctx.textBaseline='alphabetic';ctx.textAlign='center';for(const v of xt){const x=X(v);if(x<14||x>w-14)continue;ctx.fillText(v.toFixed(span<2?2:span<20?1:0),x,h-4)}ctx.textAlign='left'}
+  // series
+  ctx.lineWidth=1.6;ctx.lineJoin='round';
+  lane.forEach((ci,k)=>{const c=cols[ci];const r=indep?rg[k]:[gmn,gmx];const Y=mkY(r[0],r[1]);
+    ctx.strokeStyle=COL[k%8];drawSeries(ctx,t,c.data,i0,i1,X,Y,w,c.step)});
+  // cursor
+  if(S.cur!=null&&S.cur>=S.v0&&S.cur<=S.v1){const x=Math.round(X(S.cur))+0.5;
+    ctx.strokeStyle=TOK.cursor;ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(x,pt-6);ctx.lineTo(x,pt+ph);ctx.stroke();ctx.setLineDash([]);
+    lane.forEach((ci,k)=>{const c=cols[ci],v=valAt(c,t,S.cur);if(v!==v)return;const r=indep?rg[k]:[gmn,gmx];const y=mkY(r[0],r[1])(v);
+      ctx.fillStyle=TOK.panel;ctx.beginPath();ctx.arc(x,y,3.6,0,7);ctx.fill();ctx.strokeStyle=COL[k%8];ctx.lineWidth=2;ctx.stroke()})}
+}
+function drawSeries(ctx,T,A,i0,i1,X,Y,w,step){
+  ctx.beginPath();let st=false,py=0;
+  if(i1-i0<=w*1.5){for(let i=i0;i<i1;i++){const v=A[i];if(v!==v){st=false;continue}const x=X(T[i]),y=Y(v);
+      if(!st){ctx.moveTo(x,y);st=true}else{if(step)ctx.lineTo(x,py);ctx.lineTo(x,y)}py=y}}
+  else{let px=null,mn=0,mx=0,f=0,l=0;
+    const flush=()=>{if(px===null)return;const x=px+0.5;if(!st){ctx.moveTo(x,Y(f));st=true}else ctx.lineTo(x,Y(f));ctx.lineTo(x,Y(mn));ctx.lineTo(x,Y(mx));ctx.lineTo(x,Y(l))};
+    for(let i=i0;i<i1;i++){const v=A[i];if(v!==v)continue;const p=Math.floor(X(T[i]));if(p!==px){flush();px=p;mn=mx=f=l=v}else{if(v<mn)mn=v;if(v>mx)mx=v;l=v}}
+    flush()}
+  ctx.stroke();
+}
+function ovSeries(){const c=S.log.cols;return c.find(x=>RPM_RE.test(x.name))||(S.lanes[0]&&c[S.lanes[0][0]])||c[0]}
+function drawOverview(){
+  const cv=$('#ov'),ctx=cv.getContext('2d'),w=cv.width/dpr,h=cv.height/dpr,t=S.log.t,D=S.log.dur||1;
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const c=ovSeries();if(!c)return;const X=v=>v/D*w;
+  const Y=v=>3+(1-(v-c.min)/((c.max-c.min)||1))*(h-6);
+  // pulls
+  ctx.fillStyle=TOK.grid;for(const p of S.pulls||[]){ctx.fillRect(X(p.t0),0,Math.max(1,X(p.t1)-X(p.t0)),h)}
+  ctx.strokeStyle=TOK.muted;ctx.lineWidth=1.2;drawSeries(ctx,t,c.data,0,t.length,X,Y,w,false);
+  const a=X(S.v0),b=X(S.v1);ctx.fillStyle=TOK.shade;ctx.fillRect(0,0,a,h);ctx.fillRect(b,0,w-b,h);
+  ctx.strokeStyle=TOK.accent;ctx.lineWidth=2;ctx.strokeRect(a+1,1,Math.max(2,b-a-2),h-2);
+  if(S.cur!=null){const x=X(S.cur);ctx.fillStyle=TOK.ink;ctx.fillRect(x-0.5,0,1,h)}
+}
+function updateRead(){
+  const t=S.log.t;
+  $('#tcur').textContent=S.cur!=null?'t '+fmtT(S.cur):'t —';
+  $('#twin').textContent=`окно ${fmtT(S.v0)} – ${fmtT(S.v1)} · ${(S.v1-S.v0).toFixed(1)} s`;
+  laneObjs.forEach(L=>{L.lane.forEach((ci,k)=>{const c=S.log.cols[ci];
+    L.vals[k].textContent=S.cur!=null?fmt(valAt(c,t,S.cur),c):'—';
+    const r=L.stats[k];L.mxs[k].textContent=(r&&!c.cats&&r[1]>-Infinity)?(r[1]<=0&&r[0]<0?'↓'+fmt(r[0]):'↑'+fmt(r[1])):''})});
+}
+
+/* ---------- view control ---------- */
+function setView(a,b){const D=S.log.dur,minS=Math.min(D,Math.max(0.2,S.log.dt*8));let sp=Math.max(minS,Math.min(D,b-a));
+  if(a<0)a=0;if(a+sp>D)a=D-sp;S.v0=a;S.v1=a+sp;render()}
+function fit(){S.pull=-1;markPull();setView(0,S.log.dur)}
+function xToT(clientX){const r=lanesEl.getBoundingClientRect();return S.v0+(clientX-r.left)/r.width*(S.v1-S.v0)}
+
+/* gestures on lanes */
+const ptrs=new Map();let pinch=null,lastTap=0,mouseDrag=null;
+lanesEl.addEventListener('pointerdown',e=>{
+  if(e.target.closest('button'))return;
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(e.pointerType==='mouse'){mouseDrag={x:e.clientX,v0:S.v0,v1:S.v1,moved:false};lanesEl.setPointerCapture(e.pointerId);return}
+  if(ptrs.size===1){S.cur=xToT(e.clientX);render();
+    const now=performance.now();if(now-lastTap<300){fit()}lastTap=now}
+  if(ptrs.size===2){const [p,q]=[...ptrs.values()];pinch={d:Math.abs(p.x-q.x)||1,c:(p.x+q.x)/2,tc:xToT((p.x+q.x)/2),span:S.v1-S.v0};lastTap=0}
+});
+lanesEl.addEventListener('pointermove',e=>{
+  if(e.pointerType==='mouse'){
+    if(mouseDrag&&e.buttons){const r=lanesEl.getBoundingClientRect(),dt=(e.clientX-mouseDrag.x)/r.width*(mouseDrag.v1-mouseDrag.v0);
+      if(Math.abs(e.clientX-mouseDrag.x)>3)mouseDrag.moved=true;setView(mouseDrag.v0-dt,mouseDrag.v1-dt)}
+    S.cur=xToT(e.clientX);render();return}
+  if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(ptrs.size===1&&!pinch){S.cur=xToT(e.clientX);render()}
+  else if(ptrs.size===2&&pinch){const [p,q]=[...ptrs.values()];const d=Math.abs(p.x-q.x)||1,c=(p.x+q.x)/2;
+    const r=lanesEl.getBoundingClientRect();const sp=pinch.span*pinch.d/d;const a=pinch.tc-(c-r.left)/r.width*sp;
+    S.pull=-1;markPull();setView(a,a+sp)}
+});
+const up=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(e.pointerType==='mouse')mouseDrag=null};
+lanesEl.addEventListener('pointerup',up);lanesEl.addEventListener('pointercancel',up);
+lanesEl.addEventListener('wheel',e=>{if(!S.log)return;
+  const scrollable=lanesEl.scrollHeight>lanesEl.clientHeight+2;
+  if(scrollable&&!e.ctrlKey&&!e.altKey&&!e.shiftKey)return;
+  if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&!e.ctrlKey){e.preventDefault();const dt=e.deltaX/lanesEl.clientWidth*(S.v1-S.v0);setView(S.v0+dt,S.v1+dt);return}
+  e.preventDefault();const tc=xToT(e.clientX),f=Math.exp(e.deltaY*0.0015),sp=(S.v1-S.v0)*f;
+  const r=lanesEl.getBoundingClientRect(),a=tc-(e.clientX-r.left)/r.width*sp;S.pull=-1;markPull();setView(a,a+sp)},{passive:false});
+lanesEl.addEventListener('dblclick',()=>fit());
+
+/* overview gestures */
+const ov=$('#ov');let ovDrag=false;
+const ovMove=e=>{const r=ov.getBoundingClientRect(),tc=(e.clientX-r.left)/r.width*S.log.dur,sp=S.v1-S.v0;S.pull=-1;markPull();setView(tc-sp/2,tc+sp/2)};
+ov.addEventListener('pointerdown',e=>{ovDrag=true;ov.setPointerCapture(e.pointerId);ovMove(e)});
+ov.addEventListener('pointermove',e=>{if(ovDrag)ovMove(e)});
+ov.addEventListener('pointerup',()=>ovDrag=false);ov.addEventListener('pointercancel',()=>ovDrag=false);
+
+/* ---------- pulls UI ---------- */
+function buildPulls(){
+  const el=$('#pulls');el.innerHTML='';
+  const all=document.createElement('button');all.className='pull';all.type='button';all.textContent='Весь лог';all.onclick=fit;el.appendChild(all);
+  (S.pulls||[]).forEach((p,i)=>{const b=document.createElement('button');b.className='pull';b.type='button';
+    const g=p.gear===p.gear?`${Math.round(p.gear)}-я · `:'';
+    const r=p.r0===p.r0?`${Math.round(p.r0/50)*50}→${Math.round(p.r1/50)*50}`:'';
+    b.innerHTML=`Пулл ${i+1}<span class="num">${g}${r} · ${(p.t1-p.t0).toFixed(1)}s</span>`;
+    b.onclick=()=>{S.pull=i;markPull();const pad=Math.max(0.4,(p.t1-p.t0)*0.08);setView(p.t0-pad,p.t1+pad);S.cur=(p.t0+p.t1)/2;render()};
+    el.appendChild(b)});
+  markPull();
+}
+function markPull(){[...$('#pulls').children].forEach((b,i)=>b.setAttribute('aria-pressed',String(i===0?S.pull<0&&S.v1-S.v0>=S.log.dur-1e-6:i-1===S.pull)))}
+
+/* ---------- sheet (channel picker) ---------- */
+function openSheet(target){S.target=target;$('#sheet').hidden=false;$('#q').value='';
+  $('#sheetTitle').textContent=target==null?'Новая дорожка: выбери каналы':`Дорожка ${target+1}: добавить или убрать каналы`;
+  const pr=$('#presetRow');pr.innerHTML='';
+  for(const k of Object.keys(PRESETS)){if(k!==S.platform&&k==='named'&&S.platform!=='gen')continue;const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Пресет '+PRESETS[k].label;
+    b.onclick=()=>{S.lanes=buildPreset(S.log,k);saveLanes();closeSheet()};pr.appendChild(b)}
+  const g=document.createElement('button');g.type='button';g.className='btn';g.textContent='Очистить всё';g.onclick=()=>{S.lanes=[];saveLanes();closeSheet()};pr.appendChild(g);
+  if(typeof target==='number'){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Удалить дорожку';
+    b.onclick=()=>{S.lanes.splice(target,1);saveLanes();closeSheet()};pr.innerHTML='';pr.appendChild(b);pr.hidden=false}
+  else pr.hidden=target!=='presets';
+  $('#setBox').hidden=true;
+  if(target==='presets'){$('#sheetTitle').textContent='Пресеты и наборы';S.target=null;buildSets()}
+  listCh();
+  if(target!=='presets'&&window.innerWidth>=600)$('#q').focus();
+}
+function closeSheet(){$('#sheet').hidden=true;buildLanes();render()}
+function listCh(){
+  const q=$('#q').value.trim().toLowerCase(),cols=S.log.cols,lane=S.target!=null?S.lanes[S.target]:null;
+  const terms=q.split(/\s+/).filter(Boolean);
+  let ids=cols.map((c,i)=>i).filter(i=>{const s=(cols[i].name+' '+cols[i].desc+' '+cols[i].unit).toLowerCase();return terms.every(t=>s.includes(t))});
+  ids.sort((a,b)=>(cols[a].flat-cols[b].flat));
+  const el=$('#chList');const cap=250;
+  el.innerHTML=ids.slice(0,cap).map(i=>{const c=cols[i],on=lane&&lane.includes(i);
+    const rng=c.cats?`${c.cats.length} знач.`:c.flat?`const ${fmt(c.min)}`:`${fmt(c.min)} … ${fmt(c.max)}`;
+    return `<button type="button" class="ch${on?' on':''}${c.flat?' flat':''}" data-i="${i}"><span class="a">${esc(c.name)}</span><span class="r">${esc(rng)} ${esc(c.unit)}</span>${c.desc?`<span class="b">${esc(c.desc)}</span>`:''}</button>`}).join('')
+    +(ids.length>cap?`<div class="more">Ещё ${ids.length-cap} — уточни поиск</div>`:'')+(ids.length?'':'<div class="more">Ничего не найдено</div>');
+}
+$('#chList').addEventListener('click',e=>{const b=e.target.closest('.ch');if(!b)return;const i=+b.dataset.i;
+  if(S.target==null){S.lanes.push([i]);S.target=S.lanes.length-1;$('#sheetTitle').textContent=`Дорожка ${S.target+1}: добавить или убрать каналы`}
+  else{const L=S.lanes[S.target];const k=L.indexOf(i);if(k>=0){L.splice(k,1);if(!L.length){S.lanes.splice(S.target,1);S.target=null}}else if(L.length<8)L.push(i)}
+  saveLanes();listCh()});
+$('#q').addEventListener('input',listCh);
+$('#sheetDone').onclick=closeSheet;
+$('#sheet').addEventListener('click',e=>{if(e.target.id==='sheet')closeSheet()});
+$('#addLane').onclick=()=>openSheet(null);
+$('#presetBtn').onclick=()=>openSheet('presets');
+$('#fitBtn').onclick=fit;
+
+/* ---------- channel sets (from CSVLog tabs) ---------- */
+const GROUPS=[
+  ['rpm',/^(nmot_w|nmot|nmot_loc|Epm_nEng|RPM|Engine RPM|Engine speed|Engine Speed \(RPM\))$|nrActGear|^gangi|^gangist|^Gear$/i],
+  ['boost',/^(pvds|pvdr|pvd|psolldr|pbksoll|ps)(2)?_w(_msg)?$|^BMWtchsp_p_Req|^Boost( target( RAM)?| \(mani\))?$|^Boost pressure|Boost Pressure/i],
+  ['load',/^(rl|rlsol|rlmxs)_(w|msg)(_msg)?$|^Rf_|^Load (act|req)/i],
+  ['tq',/^(Mdk_soll|Mdg_max_gs.*|milsol_w(_msg)?|mkist_w_msg|Eng_Trq|Torque.*)$/i],
+  ['lambda',/^(lamsons|lamsonb|lamsoni)(2)?_w(_msg)?$|^UEGO_rLam|^Lambda|Lambda Actual/i],
+  ['rail',/^(prist|prsoll)(2)?_w(_msg)?$|^Prail_soll$|^FuPHi_pRail|^Rail pressure/i],
+  ['hpfp',/^dwmsvd(2)?_w(_msg)?$/i],
+  ['wg',/^(tvldste|tvldst)(2)?_w(_msg)?$|^TrbCh_ratActPosn|^WGDC|^Raw pos\. EWG|^WG:|^lepwmbks/i],
+  ['dpwg',/^dpwg/i],
+  ['ign',/^zwout(zyl)?_w(_msg)?\[\d\]$|^Zw_(soll|out)|^Timing Cyl/i],
+  ['bypass',/^B_lduv/i],
+  ['ti',/^InjSys_tiInjSum$|^Einspritzzeit|^InjVvG_tiInj/i],
+];
+function lanesFromNames(names){
+  const idx=new Map(S.log.cols.map((c,i)=>[c.name,i]));const by=new Map(),order=[];
+  for(const n of names){const i=idx.get(n);if(i===undefined)continue;
+    const g=(GROUPS.find(([,re])=>re.test(n))||['_'+n])[0];
+    if(!by.has(g)){by.set(g,[]);order.push(g)}const L=by.get(g);if(L.length<8&&!L.includes(i))L.push(i)}
+  order.sort((a,b)=>(a==='rpm'?-1:0)-(b==='rpm'?-1:0));
+  return order.map(g=>by.get(g));
+}
+const BUILTIN_SETS=[
+  ['Jackal · буст, лямбда, рейка, ti',['nmot_w','pvds_w_msg','pvdr_w_msg','lamsons_w_msg','lamsonb_w_msg','prsoll_w_msg','prist_w_msg','tvldste_w_msg','InjSys_tiInjSum']],
+  ['Jackal · буст, WG-регулятор, rl',['nmot_w','pvds_w_msg','pvdr_w_msg','rl_w','lamsons_w_msg','lamsonb_w_msg','tvldste_w_msg','dpwgysog_w','dpwgpusk_w']],
+  ['Jackal · ExhMod, дроссель, зажигание',['nmot_w','pvds_w_msg','pvdr_w_msg','ExhMod_mfExhBoostUsB1','rl_w','wdk_w_msg','lamsons_w_msg','lamsonb_w_msg','zwoutzyl_w_msg[0]']],
+  ['Jackal 557 · обе банки',['nmot_w','pvds_w','pvdr_w','pvdr2_w','lamsons_w','lamsoni_w','lamsons2_w','lamsoni2_w','prsoll_w','prist_w','prsoll2_w','prist2_w']],
+  ['Vehical VAG · обе банки, HPFP',['nmot_w','pvds_w_msg','pvdr_w_msg','lamsons_w_msg','lamsonb_w_msg','lamsons2_w_msg','lamsonb2_w_msg','prsoll_w_msg','prist_w_msg','prsoll2_w_msg','prist2_w_msg','dwmsvd_w_msg','dwmsvd2_w_msg','zwoutzyl_w_msg[0]']],
+  ['Vehical VAG · педаль, WG, tans',['nmot_w','AccP_r_VW','pvds_w_msg','pvdr_w_msg','tvldste_w_msg','dpwgysog_w','dpwgpusk_w','tans_msg','zwoutzyl_w_msg[0]']],
+  ['Vehical BMW · момент и лимиты',['nmot_loc','gangist_msg','Wdk_ist','BMWtchsp_p_Req_uw','pvdr_w','Rf_soll','Rf_max_pldmax','Rf_mdk_max','Mdk_soll','Mdg_max_gs','Mdg_max_gs_plaus','Mdg_max_gs_stat','BMWtqe_st_tq_LimSrc_ul']],
+  ['Vehical BMW · топливо',['nmot_loc','BMWtchsp_p_Req_uw','pvdr_w','Prail_soll','FuPHi_pRail','dwmsvd_w_msg','InjVvG_tiInjPlsMeas[0]']],
+  ['Vehical BMW · лямбда, зажигание',['nmot_loc','BMWtchsp_p_Req_uw','pvdr_w','lamsons_w_msg','lamsonb_w_msg','Zw_soll']],
+  ['intFlashLogger · наполнение, момент',['Epm_nEng','pvds_w_msg','pvdr_w_msg','TrbCh_ratActPosnB1','rlsol_w_msg','rl_w_msg','milsol_w_msg','Eng_Trq','dwmsvd_w_msg','InjSys_tiInjSum']],
+  ['intFlashLogger · байпас',['nmot_w','pvds_w_msg','pvdr_w_msg','tvldste_w_msg','B_lduv_msg','B_lduv2_msg']],
+  ['MHD · EWG, компрессор',['RPM','Boost','Boost target RAM','WGDC 1','Raw pos. EWG','Compressor after P-D','Compressor base','MAF REQ (P corr.)','MAF req. WGDC','Lambda 1','Timing Cyl. 5','Torque act. clutch']],
+  ['MGFlasher · базовый',['Engine Speed (RPM)','Boost Pressure: Pre-Throttle Body','Boost Pressure: Target','Fuel: Lambda Actual','Fuel: Trim Short','WG: Control (Final)','Temperature: Air Intake (IAT)']],
+  ['Autotuner · буст',['Engine speed','Boost pressure','Boost pressure setpoint']],
+];
+function allSets(){const imp=ls.get('dh-sets')||[];return imp.map(x=>[x[0],x[1],true]).concat(BUILTIN_SETS)}
+function buildSets(){
+  const box=$('#setBox'),row=$('#setRow');row.innerHTML='';
+  const have=new Set(S.log.cols.map(c=>c.name));
+  const fit=allSets().map(([name,ch,imp])=>({name,ch,imp,n:ch.filter(c=>have.has(c)).length})).filter(x=>x.n>=2).sort((a,b)=>b.n-a.n);
+  for(const x of fit.slice(0,24)){const b=document.createElement('button');b.type='button';b.className='btn set';
+    b.innerHTML=`${esc(x.name)}<small>${x.n}/${x.ch.length} каналов${x.imp?' · импорт':''}</small>`;
+    b.onclick=()=>{S.lanes=lanesFromNames(x.ch);saveLanes();closeSheet()};row.appendChild(b)}
+  if(!fit.length)row.innerHTML='<span class="note">Для этого лога подходящих наборов нет.</span>';
+  box.hidden=false;
+}
+$('#setFile').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const j=JSON.parse(await f.text());const seen=new Set(),out=[];
+    for(const sc of j.ChartTabs||[]){const src=String(sc.Scope||'').split('|').pop()||'CSVLog';
+      for(const t of sc.Tabs||[]){const ch=(t.Channels||[]).filter(Boolean);if(ch.length<2)continue;const k=ch.join(',');if(seen.has(k))continue;seen.add(k);
+        out.push([`${src} · ${t.Name||'вкладка'} · ${ch.slice(0,3).map(shortName).join(', ')}…`,ch])}}
+    if(!out.length)throw new Error('в файле нет вкладок с каналами');
+    ls.set('dh-sets',out);buildSets();toast(`Импортировано наборов: ${out.length}`)}
+  catch(err){toast('Не получилось импортировать: '+err.message)}});
+
+/* ---------- lanes persistence per platform ---------- */
+function saveLanes(){if(S.sample)return;const m=ls.get('dh-lanes')||{};m[S.platform]=S.lanes.map(L=>L.map(i=>S.log.cols[i].name));ls.set('dh-lanes',m)}
+function restoreLanes(){const m=ls.get('dh-lanes');const saved=m&&m[S.platform];if(!saved)return null;
+  const idx=new Map(S.log.cols.map((c,i)=>[c.name,i]));const lanes=saved.map(L=>L.map(n=>idx.get(n)).filter(i=>i!==undefined)).filter(L=>L.length);
+  return lanes.length?lanes:null}
+
+/* ---------- loading ---------- */
+function setLog(log,sample){
+  S.log=log;S.sample=!!sample;S.platform=detectPlatform(log);
+  S.lanes=(!sample&&restoreLanes())||buildPreset(log,S.platform);
+  S.pulls=findPulls(log);S.pull=-1;S.v0=0;S.v1=log.dur;
+  S.cur=S.pulls.length?(S.pulls[0].t0+S.pulls[0].t1)/2:log.dur*0.5;
+  $('#fname').textContent=log.name;
+  const hz=log.dt>0?Math.round(1/log.dt):0;
+  $('#fmeta').innerHTML=(sample?'<span class="badge">Пример</span>':'')+esc(`${fmtT(log.dur)} · ${hz?hz+' Гц · ':''}${log.cols.length} каналов · ${S.platform==='gen'?'формат авто':PRESETS[S.platform].label}`);
+  buildPulls();buildLanes();
+  if(S.pulls.length){const p=S.pulls[0];S.pull=0;markPull();const pad=Math.max(0.4,(p.t1-p.t0)*0.08);setView(p.t0-pad,p.t1+pad)}else render();
+}
+function loadText(text,name){
+  const t0=performance.now();
+  try{const log=parseLog(text,name);setLog(log,false);idb.put({name,text});
+    toast(`Открыт за ${Math.round(performance.now()-t0)} мс`)}
+  catch(err){toast('Не открылся: '+err.message)}
+}
+function loadBuffer(buf,name){loadText(decode(buf),name)}
+async function loadFile(f){if(!f)return;try{loadBuffer(await f.arrayBuffer(),f.name)}catch(e){toast('Файл не прочитался: '+e.message)}}
+$('#openBtn').onclick=()=>$('#file').click();
+$('#file').addEventListener('change',e=>{loadFile(e.target.files[0]);e.target.value=''});
+let dragN=0;
+addEventListener('dragenter',e=>{if([...e.dataTransfer.types].includes('Files')){dragN++;$('#drop').hidden=false}});
+addEventListener('dragleave',()=>{if(--dragN<=0){dragN=0;$('#drop').hidden=true}});
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{e.preventDefault();dragN=0;$('#drop').hidden=true;loadFile(e.dataTransfer.files[0])});
+let toastT=0;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- sample (synthetic, marked) ---------- */
+function sampleCSV(){
+  const H=['Timestamp [ms]','nmot_w [1/min]','CoEng_nrActGearHem []','AccP_r_VW [%]','wdk_w_msg [%]','pvds_w_msg [hPa]','pvdr_w_msg [hPa]','rl_w [%]','rlsol_w_msg [%]','rlmxs_w_msg [%]','lamsons_w_msg [-]','lamsonb_w_msg [-]',
+    'IKCtl_agKnkInt_as8[0] [Grad KW]','IKCtl_agKnkInt_as8[1] [Grad KW]','IKCtl_agKnkInt_as8[2] [Grad KW]','IKCtl_agKnkInt_as8[3] [Grad KW]','IKCtl_agKnkInt_as8[4] [Grad KW]','IKCtl_agKnkInt_as8[5] [Grad KW]',
+    'zwoutzyl_w_msg[0] [Grad KW]','tvldste_w_msg [%]','prist_w_msg [MPa]','prsoll_w_msg [MPa]','FuelP_pAct [kPa]','tans_msg [Grad C]','CHdT_vVehloc [km/h]'];
+  const rows=[H.map(h=>`"${h}"`).join(',')];
+  const nz=(t,a)=>Math.sin(t*12.9898+a)*0.5+Math.sin(t*4.1+a*2)*0.5;
+  let rpm=1900,gear=3;
+  for(let ms=0;ms<=36000;ms+=50){const t=ms/1000;
+    let ped=18,ph=0;
+    if(t>=8&&t<19)ped=100; else if(t>=26&&t<31)ped=100; else if(t>=19&&t<26)ped=12;
+    if(t<8){rpm=1900+60*Math.sin(t)}
+    else if(t<13.6){gear=3;rpm=2100+(t-8)/5.6*4750}
+    else if(t<19){gear=4;rpm=t<13.9?6850-(t-13.6)/0.3*1650:5200+(t-13.9)/5.1*1600}
+    else if(t<26){gear=t<22?4:2;rpm=t<22?6800-(t-19)/3*2900:3900-(t-22)/4*1300}
+    else if(t<31){gear=2;rpm=2600+(t-26)/5*4300}
+    else{gear=3;rpm=Math.max(1700,4900-(t-31)*700)}
+    const wot=ped>90,ramp=wot?Math.min(1,(t-(t<20?8:26))/1.2):0;
+    const shift=(t>=13.6&&t<13.95);
+    const pTgt=wot?(1000+ramp*1550-(rpm>5800?(rpm-5800)*0.25:0)):1010+ped*3;
+    const pAct=wot?pTgt*(0.9+0.1*Math.min(1,ramp*1.3))+18*nz(t,1)-(shift?420:0):pTgt-30+8*nz(t,2);
+    const rlsol=wot?40+ramp*150:22+ped*0.4, rl=rlsol*(pAct/pTgt)+nz(t,3);
+    const lamT=wot?(rpm>5000?0.82:0.86):1.0, lamA=lamT+0.012*nz(t,4)+(wot&&ramp<0.4?0.04:0);
+    const knock=[0,1,2,3,4,5].map(c=>{let v=0;if(wot&&rpm>4300&&rpm<5600&&c===(t<20?3:1)){v=-((Math.sin(t*3+c)+1)*1.1)}if(wot&&Math.sin(t*0.9+c*1.7)*Math.sin(t*2.3+c)>0.93)v-=0.75;return Math.round(v/0.375)*0.375});
+    const ign=wot?(4+ (rpm-2000)/4800*12)+knock[0]:22+nz(t,5)*2;
+    const wg=wot?Math.max(10,95-ramp*35-(rpm-2000)/100):12;
+    const ps=wot?25:12, pr=ps+0.3*nz(t,6);
+    const v=Math.max(0,rpm/1000*(gear===2?14:gear===3?21:28));
+    rows.push([ms,rpm.toFixed(1),gear,ped.toFixed(1),(wot?99.9:ped*0.9).toFixed(2),pTgt.toFixed(1),pAct.toFixed(1),rl.toFixed(1),rlsol.toFixed(1),(rlsol+12).toFixed(1),lamT.toFixed(3),lamA.toFixed(3),...knock.map(k=>k.toFixed(2)),ign.toFixed(1),wg.toFixed(1),pr.toFixed(2),ps.toFixed(2),(650+20*nz(t,7)).toFixed(1),(31+t*0.08).toFixed(1),v.toFixed(1)].join(','));
+  }
+  return rows.join('\n');
+}
+function loadSample(){setLog(parseLog(sampleCSV(),'пример_559_3rd-4th_WOT.csv'),true)}
+
+/* ---------- link loader: #f=<name>&gz=<base64> from the iOS shortcut ---------- */
+function b64bytes(s){s=s.replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';
+  const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
+async function inflate(u,fmt){if(typeof DecompressionStream==='undefined')throw new Error('браузер не умеет распаковывать, обнови iOS до 16.4+');
+  const st=new Blob([u]).stream().pipeThrough(new DecompressionStream(fmt));return new Uint8Array(await new Response(st).arrayBuffer())}
+async function unpack(u){
+  if(u[0]===0x1f&&u[1]===0x8b){let name=null;
+    if(u[3]&8){let p=10;if(u[3]&4)p+=2+(u[10]|u[11]<<8);const e=u.indexOf(0,p);if(e>p)name=new TextDecoder('latin1').decode(u.subarray(p,e)).split('/').pop()}
+    return {name,data:await inflate(u,'gzip')}}
+  if(u[0]===0x50&&u[1]===0x4b&&u[2]===3&&u[3]===4){ // zip, first entry
+    const dv=new DataView(u.buffer,u.byteOffset);const m=dv.getUint16(8,true),cs=dv.getUint32(18,true),nl=dv.getUint16(26,true),xl=dv.getUint16(28,true);
+    const name=new TextDecoder().decode(u.subarray(30,30+nl)),st=30+nl+xl;
+    let body=cs?u.subarray(st,st+cs):u.subarray(st);
+    return {name:name.split('/').pop(),data:m===0?body:await inflate(body,'deflate-raw')}}
+  return {data:u};
+}
+async function checkHash(){
+  const h=location.hash;if(!/[#&](gz|b64|d)=/.test(h))return false;
+  const t0=performance.now();
+  try{let name='лог.csv',payload='';
+    for(const part of h.slice(1).split('&')){const k=part.indexOf('=');if(k<0)continue;const key=part.slice(0,k),val=part.slice(k+1);
+      if(key==='f')name=decodeURIComponent(val)||name;else if(key==='gz'||key==='b64'||key==='d')payload=val}
+    if(payload.includes('%'))payload=decodeURIComponent(payload);
+    const r=await unpack(b64bytes(payload));if(r.name&&name==='лог.csv')name=r.name;
+    name=name.replace(/\.(gz|zip)$/i,'');
+    try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+    const text=decode(r.data.buffer.slice(r.data.byteOffset,r.data.byteOffset+r.data.byteLength));
+    const log=parseLog(text,name);setLog(log,false);idb.put({name,text});
+    toast(`Открыт из ссылки за ${Math.round(performance.now()-t0)} мс`);return true}
+  catch(err){toast('Ссылка не открылась: '+err.message);return false}
+}
+addEventListener('hashchange',()=>{checkHash()});
+
+/* ---------- iPhone help ---------- */
+function openHelp(){
+  const base=location.origin&&location.origin!=='null'&&/^https?:/.test(location.protocol)?location.origin+location.pathname:'https://<твой-адрес>/';
+  const hosted=!/claude|claudeusercontent|localhost|^file/i.test(location.href)&&window.top===window;
+  $('#helpUrl').textContent=(hosted?base:'https://<адрес вьюера на GitHub Pages>/')+'#gz=';
+  $('#helpNote').textContent=hosted?'Адрес уже правильный, скопируй его целиком.':'Адрес появится, когда вьюер будет выложен на GitHub Pages. Отсюда, из Claude, ссылки с логом не работают.';
+  $('#help').hidden=false}
+$('#helpBtn').onclick=openHelp;$('#helpDone').onclick=()=>$('#help').hidden=true;
+$('#help').addEventListener('click',e=>{if(e.target.id==='help')$('#help').hidden=true});
+$('#copyUrl').onclick=()=>{const t=$('#helpUrl').textContent;
+  try{navigator.clipboard.writeText(t).then(()=>toast('Скопировано'),()=>selectUrl())}catch(e){selectUrl()}};
+function selectUrl(){const r=document.createRange();r.selectNodeContents($('#helpUrl'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Выделено, скопируй вручную')}
+
+/* ---------- PWA hooks (no-ops inside the artifact) ---------- */
+async function checkShared(){
+  if(!/[?&]shared=1/.test(location.search)||!('caches' in window))return false;
+  try{const c=await caches.open('dh-share');const key=new URL('shared-file',location.href).href;const r=await c.match(key);if(!r)return false;
+    const name=decodeURIComponent(r.headers.get('x-name')||'shared.csv');const buf=await r.arrayBuffer();await c.delete(key);
+    history.replaceState(null,'',location.pathname);loadBuffer(buf,name);return true}catch(e){return false}
+}
+if('launchQueue' in window){try{launchQueue.setConsumer(async p=>{if(p.files&&p.files.length){const f=await p.files[0].getFile();loadFile(f)}})}catch(e){}}
+try{if('serviceWorker' in navigator&&window.top===window&&location.protocol==='https:'&&document.querySelector('link[rel=manifest]'))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+
+/* ---------- boot ---------- */
+readTokens();
+const mq=matchMedia('(prefers-color-scheme: dark)');(mq.addEventListener?mq.addEventListener('change',()=>{readTokens();render()}):0);
+new MutationObserver(()=>{readTokens();render()}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+new ResizeObserver(()=>{dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));if(S.log)layout()}).observe(lanesEl);
+addEventListener('keydown',e=>{if(!S.log||e.target.tagName==='INPUT')return;const sp=S.v1-S.v0;
+  if(e.key==='ArrowRight')setView(S.v0+sp*0.1,S.v1+sp*0.1);else if(e.key==='ArrowLeft')setView(S.v0-sp*0.1,S.v1-sp*0.1);
+  else if(e.key==='+'||e.key==='=')setView(S.v0+sp*0.15,S.v1-sp*0.15);else if(e.key==='-')setView(S.v0-sp*0.2,S.v1+sp*0.2);
+  else if(e.key==='Escape'){if(!$('#sheet').hidden)closeSheet();$('#help').hidden=true}});
+loadSample();
+(async()=>{if(await checkHash())return;if(await checkShared())return;const last=await idb.get();if(last&&last.text){try{setLog(parseLog(last.text,last.name),false)}catch(e){}}})();
+</script>
+
+</body>
+</html>

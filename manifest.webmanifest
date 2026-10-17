@@ -1,0 +1,29 @@
+{
+  "name": "DarkHorse Log Viewer",
+  "short_name": "Логи",
+  "description": "Быстрый просмотр логов ЭБУ (Jackal, MHD, bFlash, CSV)",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e141b",
+  "theme_color": "#141c25",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "files": [{"name": "log", "accept": ["text/csv", "text/comma-separated-values", "text/plain", "text/*", "application/csv", "application/vnd.ms-excel", "application/octet-stream", ".csv", ".txt", ".log"]}]
+    }
+  },
+  "file_handlers": [
+    {"action": "./", "accept": {"text/csv": [".csv"], "text/plain": [".txt", ".log"]}}
+  ]
+}

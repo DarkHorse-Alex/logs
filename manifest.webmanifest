@@ -1,7 +1,7 @@
 {
   "name": "DarkHorse Log Viewer",
-  "short_name": "Логи",
-  "description": "Быстрый просмотр логов ЭБУ (Jackal, MHD, bFlash, CSV)",
+  "short_name": "Logs",
+  "description": "Fast ECU log viewer",
   "id": "./",
   "start_url": "./",
   "scope": "./",

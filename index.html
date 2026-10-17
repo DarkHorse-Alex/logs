@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="theme-color" content="#141c25">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -116,54 +117,54 @@ header{display:flex;align-items:center;gap:10px;padding-block:8px 6px;background
 <header class="gut">
   <div class="file"><b id="fname">—</b><small id="fmeta"></small></div>
   <button class="btn" id="helpBtn" type="button">iPhone</button>
-  <button class="btn primary" id="openBtn" type="button" aria-label="Открыть лог">Открыть</button>
+  <button class="btn primary" id="openBtn" type="button" aria-label="Open log">Open</button>
   <input id="file" type="file" accept=".csv,.txt,.log,text/csv,text/plain" hidden>
 </header>
 <div class="readbar gut"><span class="t num" id="tcur">t —</span><span class="num" id="twin"></span></div>
 <div class="pulls gut" id="pulls"></div>
 <div id="lanes"></div>
 <div class="bottom gut">
-  <canvas id="ov" aria-label="Обзор всего лога"></canvas>
+  <canvas id="ov" aria-label="Whole-log overview"></canvas>
   <div class="tools">
-    <button class="btn" id="addLane" type="button">+ Дорожка</button>
-    <button class="btn" id="presetBtn" type="button">Пресет</button>
-    <button class="btn" id="fitBtn" type="button">Весь лог</button>
+    <button class="btn" id="addLane" type="button">+ Lane</button>
+    <button class="btn" id="presetBtn" type="button">Presets</button>
+    <button class="btn" id="fitBtn" type="button">Full log</button>
   </div>
 </div>
 
 <div id="sheet" hidden>
   <div class="card gut" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="head"><h2 id="sheetTitle">Каналы</h2><button class="btn primary" id="sheetDone" type="button">Готово</button></div>
-    <input id="q" type="search" placeholder="Поиск: nmot, pvds, lambda, boost…" autocomplete="off" spellcheck="false">
+    <div class="head"><h2 id="sheetTitle">Channels</h2><button class="btn primary" id="sheetDone" type="button">Done</button></div>
+    <input id="q" type="search" placeholder="Search: nmot, pvds, lambda, boost…" autocomplete="off" spellcheck="false">
     <div class="presets" id="presetRow"></div>
     <div id="setBox" hidden>
-      <h3 class="sub">Наборы из CSVLog</h3>
+      <h3 class="sub" id="setHead">Channel sets</h3>
       <div class="sets" id="setRow"></div>
-      <label class="btn imp">Импорт settings.json из CSVLog<input id="setFile" type="file" accept=".json,application/json,text/plain" hidden></label>
+      <label class="btn imp"><span id="impLabel">Import channel sets (.json)</span><input id="setFile" type="file" accept=".json,application/json,text/plain" hidden></label>
     </div>
     <div id="chList"></div>
   </div>
 </div>
 <div id="help" hidden>
   <div class="card gut" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="head"><h2 id="helpTitle">Логи с iPhone в два тапа</h2><button class="btn primary" id="helpDone" type="button">Готово</button></div>
+    <div class="head"><h2 id="helpTitle">Logs from iPhone in two taps</h2><button class="btn primary" id="helpDone" type="button">Done</button></div>
     <div class="helpbody">
-      <p>Один раз собери быструю команду. После этого в Telegram, WhatsApp или Почте: <b>Поделиться → Логи</b>, и лог открывается здесь.</p>
+      <p>Build one shortcut once. After that, in Telegram, WhatsApp or Mail: <b>Share → Logs</b>, and the log opens here.</p>
       <ol class="steps">
-        <li>Открой приложение <b>Команды</b> → <b>+</b>. Назови команду <b>Логи</b>.</li>
-        <li>Нажми <b>ⓘ</b> внизу → включи <b>Показывать в меню «Поделиться»</b>. Типы: оставь <b>Файлы</b>.</li>
-        <li>Добавь действие <b>Создать архив</b> (Make Archive): на входе «Входные данные Быстрой команды», формат <b>.gz</b>.</li>
-        <li>Добавь <b>Кодировать Base64</b> (Base64 Encode), разрывы строк: <b>Нет</b>.</li>
-        <li>Добавь <b>Текст</b> (Text): вставь адрес ниже и сразу за ним, без пробела, переменную из шага 4.</li>
-        <li>Добавь <b>Открыть URL</b> (Open URLs) с этим текстом.</li>
+        <li>Open the <b>Shortcuts</b> app → <b>+</b>. Name the shortcut <b>Logs</b>.</li>
+        <li>Tap <b>ⓘ</b> → turn on <b>Show in Share Sheet</b>. Input types: keep <b>Files</b>.</li>
+        <li>Add <b>Make Archive</b>: input <b>Shortcut Input</b>, format <b>.gz</b>.</li>
+        <li>Add <b>Base64 Encode</b>, line breaks: <b>None</b>.</li>
+        <li>Add <b>Text</b>: paste the address below, then right after it, with no space, the variable from step 4.</li>
+        <li>Add <b>Open URLs</b> with that text.</li>
       </ol>
-      <div class="url"><code id="helpUrl" class="num"></code><button class="btn" id="copyUrl" type="button">Копировать</button></div>
+      <div class="url"><code id="helpUrl" class="num"></code><button class="btn" id="copyUrl" type="button">Copy</button></div>
       <p class="note" id="helpNote"></p>
-      <p class="note">Лог передаётся внутри ссылки и разбирается на телефоне. На сервер он не уходит.</p>
+      <p class="note">The log travels inside the link and is parsed on the phone. It never reaches a server.</p>
     </div>
   </div>
 </div>
-<div id="drop" hidden>Отпусти файл лога</div>
+<div id="drop" hidden>Drop the log file</div>
 <div id="toast" hidden></div>
 
 <script>
@@ -202,7 +203,7 @@ function normUnit(u){u=(u||'').trim();const m=UNITMAP[u.toLowerCase()];return m|
 function parseLog(text,name){
   text=text.replace(/^﻿/,'');
   const lines=text.split(/\r?\n/).filter(l=>l.trim()!=='');
-  if(lines.length<3) throw new Error('В файле меньше трёх строк');
+  if(lines.length<3) throw new Error('The file has fewer than three lines');
   const cand=lines.slice(0,15);
   let d=',',best=-1,bestF=-1;
   for(const dd of [',',';','\t']){
@@ -210,7 +211,7 @@ function parseLog(text,name){
     let m=1,mf=0;for(const [c,f] of freq)if(c>=2&&(f>mf||(f===mf&&c>m))){m=c;mf=f}
     const fr=mf/cnt.length;if(m<2)continue;
     if(fr>bestF+0.2||(Math.abs(fr-bestF)<=0.2&&m>best)){best=m;bestF=fr;d=dd}}
-  if(best<2) throw new Error('Не нашёл разделитель столбцов');
+  if(best<2) throw new Error('No column separator found');
   let hi=cand.findIndex(l=>l.split(d).length>=best*0.6);
   const dc=d!==',';
   const isNum=s=>{s=(s||'').trim();if(dc)s=s.replace(',','.');return NUMRE.test(s)};
@@ -240,7 +241,7 @@ function parseLog(text,name){
       if(NUMRE.test(s2)){D[j][k]=+s2;nN[j]++}else{if(!TX[j])TX[j]=new Array(n);TX[j][k]=s;nT[j]++}}
     k++;
   }
-  if(k<2) throw new Error('Нет строк с числовым временем в первом столбце');
+  if(k<2) throw new Error('No rows with a numeric time in the first column');
   let t=T.subarray(0,k);
   // time unit
   const tcol=cols[tc];let diffs=[];for(let i=1;i<k&&diffs.length<2000;i+=Math.max(1,Math.floor(k/2000)))diffs.push(t[i]-t[i-1]);
@@ -395,13 +396,13 @@ function buildLanes(){
       const t=document.createElement('span');t.className='tag';
       t.innerHTML=`<i style="background:var(--s${k%8})"></i><span class="nm" title="${esc(c.name+(c.desc?' — '+c.desc:''))}">${esc(laneLabel(lane,k))}</span><span class="v">—</span><span class="u">${esc(c.unit==='-'?'':c.unit)}</span><span class="mx"></span>`;
       h.appendChild(t)});
-    const add=document.createElement('button');add.className='add';add.type='button';add.textContent='+';add.setAttribute('aria-label','Изменить каналы этой дорожки');
+    const add=document.createElement('button');add.className='add';add.type='button';add.textContent='+';add.setAttribute('aria-label','Edit this lane\'s channels');
     add.onclick=()=>openSheet(li);h.appendChild(add);
     const cv=document.createElement('canvas');
     el.append(h,cv);lanesEl.appendChild(el);
     laneObjs.push({el,h,cv,ctx:cv.getContext('2d'),lane,vals:[...h.querySelectorAll('.v')],mxs:[...h.querySelectorAll('.mx')],w:0,h0:0,stats:[]});
   });
-  if(!S.lanes.length){lanesEl.innerHTML='<p class="gut" style="color:var(--muted);padding-block:24px">Дорожек нет. Нажми «+ Дорожка» или «Пресет».</p>'}
+  if(!S.lanes.length){lanesEl.innerHTML='<p class="gut" style="color:var(--muted);padding-block:24px">No lanes. Tap “+ Lane” or “Presets”.</p>'}
   layout();
 }
 function layout(){
@@ -484,7 +485,7 @@ function drawOverview(){
 function updateRead(){
   const t=S.log.t;
   $('#tcur').textContent=S.cur!=null?'t '+fmtT(S.cur):'t —';
-  $('#twin').textContent=`окно ${fmtT(S.v0)} – ${fmtT(S.v1)} · ${(S.v1-S.v0).toFixed(1)} s`;
+  $('#twin').textContent=`window ${fmtT(S.v0)} – ${fmtT(S.v1)} · ${(S.v1-S.v0).toFixed(1)} s`;
   laneObjs.forEach(L=>{L.lane.forEach((ci,k)=>{const c=S.log.cols[ci];
     L.vals[k].textContent=S.cur!=null?fmt(valAt(c,t,S.cur),c):'—';
     const r=L.stats[k];L.mxs[k].textContent=(r&&!c.cats&&r[1]>-Infinity)?(r[1]<=0&&r[0]<0?'↓'+fmt(r[0]):'↑'+fmt(r[1])):''})});
@@ -537,11 +538,11 @@ ov.addEventListener('pointerup',()=>ovDrag=false);ov.addEventListener('pointerca
 /* ---------- pulls UI ---------- */
 function buildPulls(){
   const el=$('#pulls');el.innerHTML='';
-  const all=document.createElement('button');all.className='pull';all.type='button';all.textContent='Весь лог';all.onclick=fit;el.appendChild(all);
+  const all=document.createElement('button');all.className='pull';all.type='button';all.textContent='Full log';all.onclick=fit;el.appendChild(all);
   (S.pulls||[]).forEach((p,i)=>{const b=document.createElement('button');b.className='pull';b.type='button';
-    const g=p.gear===p.gear?`${Math.round(p.gear)}-я · `:'';
+    const g=p.gear===p.gear?`gear ${Math.round(p.gear)} · `:'';
     const r=p.r0===p.r0?`${Math.round(p.r0/50)*50}→${Math.round(p.r1/50)*50}`:'';
-    b.innerHTML=`Пулл ${i+1}<span class="num">${g}${r} · ${(p.t1-p.t0).toFixed(1)}s</span>`;
+    b.innerHTML=`Pull ${i+1}<span class="num">${g}${r} · ${(p.t1-p.t0).toFixed(1)}s</span>`;
     b.onclick=()=>{S.pull=i;markPull();const pad=Math.max(0.4,(p.t1-p.t0)*0.08);setView(p.t0-pad,p.t1+pad);S.cur=(p.t0+p.t1)/2;render()};
     el.appendChild(b)});
   markPull();
@@ -550,16 +551,16 @@ function markPull(){[...$('#pulls').children].forEach((b,i)=>b.setAttribute('ari
 
 /* ---------- sheet (channel picker) ---------- */
 function openSheet(target){S.target=target;$('#sheet').hidden=false;$('#q').value='';
-  $('#sheetTitle').textContent=target==null?'Новая дорожка: выбери каналы':`Дорожка ${target+1}: добавить или убрать каналы`;
+  $('#sheetTitle').textContent=target==null?'New lane: pick channels':`Lane ${target+1}: add or remove channels`;
   const pr=$('#presetRow');pr.innerHTML='';
-  for(const k of Object.keys(PRESETS)){if(k!==S.platform&&k==='named'&&S.platform!=='gen')continue;const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Пресет '+PRESETS[k].label;
+  for(const k of Object.keys(PRESETS)){if(k!==S.platform&&k==='named'&&S.platform!=='gen')continue;const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Preset '+PRESETS[k].label;
     b.onclick=()=>{S.lanes=buildPreset(S.log,k);saveLanes();closeSheet()};pr.appendChild(b)}
-  const g=document.createElement('button');g.type='button';g.className='btn';g.textContent='Очистить всё';g.onclick=()=>{S.lanes=[];saveLanes();closeSheet()};pr.appendChild(g);
-  if(typeof target==='number'){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Удалить дорожку';
+  const g=document.createElement('button');g.type='button';g.className='btn';g.textContent='Clear all';g.onclick=()=>{S.lanes=[];saveLanes();closeSheet()};pr.appendChild(g);
+  if(typeof target==='number'){const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Delete lane';
     b.onclick=()=>{S.lanes.splice(target,1);saveLanes();closeSheet()};pr.innerHTML='';pr.appendChild(b);pr.hidden=false}
   else pr.hidden=target!=='presets';
   $('#setBox').hidden=true;
-  if(target==='presets'){$('#sheetTitle').textContent='Пресеты и наборы';S.target=null;buildSets()}
+  if(target==='presets'){$('#sheetTitle').textContent='Presets and sets';S.target=null;buildSets()}
   listCh();
   if(target!=='presets'&&window.innerWidth>=600)$('#q').focus();
 }
@@ -571,12 +572,12 @@ function listCh(){
   ids.sort((a,b)=>(cols[a].flat-cols[b].flat));
   const el=$('#chList');const cap=250;
   el.innerHTML=ids.slice(0,cap).map(i=>{const c=cols[i],on=lane&&lane.includes(i);
-    const rng=c.cats?`${c.cats.length} знач.`:c.flat?`const ${fmt(c.min)}`:`${fmt(c.min)} … ${fmt(c.max)}`;
+    const rng=c.cats?`${c.cats.length} values`:c.flat?`const ${fmt(c.min)}`:`${fmt(c.min)} … ${fmt(c.max)}`;
     return `<button type="button" class="ch${on?' on':''}${c.flat?' flat':''}" data-i="${i}"><span class="a">${esc(c.name)}</span><span class="r">${esc(rng)} ${esc(c.unit)}</span>${c.desc?`<span class="b">${esc(c.desc)}</span>`:''}</button>`}).join('')
-    +(ids.length>cap?`<div class="more">Ещё ${ids.length-cap} — уточни поиск</div>`:'')+(ids.length?'':'<div class="more">Ничего не найдено</div>');
+    +(ids.length>cap?`<div class="more">${ids.length-cap} more, refine the search</div>`:'')+(ids.length?'':'<div class="more">Nothing found</div>');
 }
 $('#chList').addEventListener('click',e=>{const b=e.target.closest('.ch');if(!b)return;const i=+b.dataset.i;
-  if(S.target==null){S.lanes.push([i]);S.target=S.lanes.length-1;$('#sheetTitle').textContent=`Дорожка ${S.target+1}: добавить или убрать каналы`}
+  if(S.target==null){S.lanes.push([i]);S.target=S.lanes.length-1;$('#sheetTitle').textContent=`Lane ${S.target+1}: add or remove channels`}
   else{const L=S.lanes[S.target];const k=L.indexOf(i);if(k>=0){L.splice(k,1);if(!L.length){S.lanes.splice(S.target,1);S.target=null}}else if(L.length<8)L.push(i)}
   saveLanes();listCh()});
 $('#q').addEventListener('input',listCh);
@@ -609,41 +610,26 @@ function lanesFromNames(names){
   order.sort((a,b)=>(a==='rpm'?-1:0)-(b==='rpm'?-1:0));
   return order.map(g=>by.get(g));
 }
-const BUILTIN_SETS=[
-  ['Jackal · буст, лямбда, рейка, ti',['nmot_w','pvds_w_msg','pvdr_w_msg','lamsons_w_msg','lamsonb_w_msg','prsoll_w_msg','prist_w_msg','tvldste_w_msg','InjSys_tiInjSum']],
-  ['Jackal · буст, WG-регулятор, rl',['nmot_w','pvds_w_msg','pvdr_w_msg','rl_w','lamsons_w_msg','lamsonb_w_msg','tvldste_w_msg','dpwgysog_w','dpwgpusk_w']],
-  ['Jackal · ExhMod, дроссель, зажигание',['nmot_w','pvds_w_msg','pvdr_w_msg','ExhMod_mfExhBoostUsB1','rl_w','wdk_w_msg','lamsons_w_msg','lamsonb_w_msg','zwoutzyl_w_msg[0]']],
-  ['Jackal 557 · обе банки',['nmot_w','pvds_w','pvdr_w','pvdr2_w','lamsons_w','lamsoni_w','lamsons2_w','lamsoni2_w','prsoll_w','prist_w','prsoll2_w','prist2_w']],
-  ['Vehical VAG · обе банки, HPFP',['nmot_w','pvds_w_msg','pvdr_w_msg','lamsons_w_msg','lamsonb_w_msg','lamsons2_w_msg','lamsonb2_w_msg','prsoll_w_msg','prist_w_msg','prsoll2_w_msg','prist2_w_msg','dwmsvd_w_msg','dwmsvd2_w_msg','zwoutzyl_w_msg[0]']],
-  ['Vehical VAG · педаль, WG, tans',['nmot_w','AccP_r_VW','pvds_w_msg','pvdr_w_msg','tvldste_w_msg','dpwgysog_w','dpwgpusk_w','tans_msg','zwoutzyl_w_msg[0]']],
-  ['Vehical BMW · момент и лимиты',['nmot_loc','gangist_msg','Wdk_ist','BMWtchsp_p_Req_uw','pvdr_w','Rf_soll','Rf_max_pldmax','Rf_mdk_max','Mdk_soll','Mdg_max_gs','Mdg_max_gs_plaus','Mdg_max_gs_stat','BMWtqe_st_tq_LimSrc_ul']],
-  ['Vehical BMW · топливо',['nmot_loc','BMWtchsp_p_Req_uw','pvdr_w','Prail_soll','FuPHi_pRail','dwmsvd_w_msg','InjVvG_tiInjPlsMeas[0]']],
-  ['Vehical BMW · лямбда, зажигание',['nmot_loc','BMWtchsp_p_Req_uw','pvdr_w','lamsons_w_msg','lamsonb_w_msg','Zw_soll']],
-  ['intFlashLogger · наполнение, момент',['Epm_nEng','pvds_w_msg','pvdr_w_msg','TrbCh_ratActPosnB1','rlsol_w_msg','rl_w_msg','milsol_w_msg','Eng_Trq','dwmsvd_w_msg','InjSys_tiInjSum']],
-  ['intFlashLogger · байпас',['nmot_w','pvds_w_msg','pvdr_w_msg','tvldste_w_msg','B_lduv_msg','B_lduv2_msg']],
-  ['MHD · EWG, компрессор',['RPM','Boost','Boost target RAM','WGDC 1','Raw pos. EWG','Compressor after P-D','Compressor base','MAF REQ (P corr.)','MAF req. WGDC','Lambda 1','Timing Cyl. 5','Torque act. clutch']],
-  ['MGFlasher · базовый',['Engine Speed (RPM)','Boost Pressure: Pre-Throttle Body','Boost Pressure: Target','Fuel: Lambda Actual','Fuel: Trim Short','WG: Control (Final)','Temperature: Air Intake (IAT)']],
-  ['Autotuner · буст',['Engine speed','Boost pressure','Boost pressure setpoint']],
-];
+const BUILTIN_SETS=[];
 function allSets(){const imp=ls.get('dh-sets')||[];return imp.map(x=>[x[0],x[1],true]).concat(BUILTIN_SETS)}
 function buildSets(){
   const box=$('#setBox'),row=$('#setRow');row.innerHTML='';
   const have=new Set(S.log.cols.map(c=>c.name));
   const fit=allSets().map(([name,ch,imp])=>({name,ch,imp,n:ch.filter(c=>have.has(c)).length})).filter(x=>x.n>=2).sort((a,b)=>b.n-a.n);
   for(const x of fit.slice(0,24)){const b=document.createElement('button');b.type='button';b.className='btn set';
-    b.innerHTML=`${esc(x.name)}<small>${x.n}/${x.ch.length} каналов${x.imp?' · импорт':''}</small>`;
+    b.innerHTML=`${esc(x.name)}<small>${x.n}/${x.ch.length} channels${x.imp?' · imported':''}</small>`;
     b.onclick=()=>{S.lanes=lanesFromNames(x.ch);saveLanes();closeSheet()};row.appendChild(b)}
-  if(!fit.length)row.innerHTML='<span class="note">Для этого лога подходящих наборов нет.</span>';
+  if(!fit.length)row.innerHTML='<span class="note">No matching sets for this log.</span>';
   box.hidden=false;
 }
 $('#setFile').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const j=JSON.parse(await f.text());const seen=new Set(),out=[];
     for(const sc of j.ChartTabs||[]){const src=String(sc.Scope||'').split('|').pop()||'CSVLog';
       for(const t of sc.Tabs||[]){const ch=(t.Channels||[]).filter(Boolean);if(ch.length<2)continue;const k=ch.join(',');if(seen.has(k))continue;seen.add(k);
-        out.push([`${src} · ${t.Name||'вкладка'} · ${ch.slice(0,3).map(shortName).join(', ')}…`,ch])}}
-    if(!out.length)throw new Error('в файле нет вкладок с каналами');
-    ls.set('dh-sets',out);buildSets();toast(`Импортировано наборов: ${out.length}`)}
-  catch(err){toast('Не получилось импортировать: '+err.message)}});
+        out.push([`${src} · ${t.Name||'tab'} · ${ch.slice(0,3).map(shortName).join(', ')}…`,ch])}}
+    if(!out.length)throw new Error('no tabs with channels in the file');
+    ls.set('dh-sets',out);buildSets();toast(`Imported sets: ${out.length}`)}
+  catch(err){toast('Import failed: '+err.message)}});
 
 /* ---------- lanes persistence per platform ---------- */
 function saveLanes(){if(S.sample)return;const m=ls.get('dh-lanes')||{};m[S.platform]=S.lanes.map(L=>L.map(i=>S.log.cols[i].name));ls.set('dh-lanes',m)}
@@ -659,18 +645,18 @@ function setLog(log,sample){
   S.cur=S.pulls.length?(S.pulls[0].t0+S.pulls[0].t1)/2:log.dur*0.5;
   $('#fname').textContent=log.name;
   const hz=log.dt>0?Math.round(1/log.dt):0;
-  $('#fmeta').innerHTML=(sample?'<span class="badge">Пример</span>':'')+esc(`${fmtT(log.dur)} · ${hz?hz+' Гц · ':''}${log.cols.length} каналов · ${S.platform==='gen'?'формат авто':PRESETS[S.platform].label}`);
+  $('#fmeta').innerHTML=(sample?'<span class="badge">Sample</span>':'')+esc(`${fmtT(log.dur)} · ${hz?hz+' Hz · ':''}${log.cols.length} channels · ${S.platform==='gen'?'auto format':PRESETS[S.platform].label}`);
   buildPulls();buildLanes();
   if(S.pulls.length){const p=S.pulls[0];S.pull=0;markPull();const pad=Math.max(0.4,(p.t1-p.t0)*0.08);setView(p.t0-pad,p.t1+pad)}else render();
 }
 function loadText(text,name){
   const t0=performance.now();
   try{const log=parseLog(text,name);setLog(log,false);idb.put({name,text});
-    toast(`Открыт за ${Math.round(performance.now()-t0)} мс`)}
-  catch(err){toast('Не открылся: '+err.message)}
+    toast(`Opened in ${Math.round(performance.now()-t0)} ms`)}
+  catch(err){toast('Could not open: '+err.message)}
 }
 function loadBuffer(buf,name){loadText(decode(buf),name)}
-async function loadFile(f){if(!f)return;try{loadBuffer(await f.arrayBuffer(),f.name)}catch(e){toast('Файл не прочитался: '+e.message)}}
+async function loadFile(f){if(!f)return;try{loadBuffer(await f.arrayBuffer(),f.name)}catch(e){toast('Could not read the file: '+e.message)}}
 $('#openBtn').onclick=()=>$('#file').click();
 $('#file').addEventListener('change',e=>{loadFile(e.target.files[0]);e.target.value=''});
 let dragN=0;
@@ -712,12 +698,12 @@ function sampleCSV(){
   }
   return rows.join('\n');
 }
-function loadSample(){setLog(parseLog(sampleCSV(),'пример_559_3rd-4th_WOT.csv'),true)}
+function loadSample(){setLog(parseLog(sampleCSV(),'sample_559_3rd-4th_WOT.csv'),true)}
 
 /* ---------- link loader: #f=<name>&gz=<base64> from the iOS shortcut ---------- */
 function b64bytes(s){s=s.replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';
   const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
-async function inflate(u,fmt){if(typeof DecompressionStream==='undefined')throw new Error('браузер не умеет распаковывать, обнови iOS до 16.4+');
+async function inflate(u,fmt){if(typeof DecompressionStream==='undefined')throw new Error('this browser cannot decompress, update to iOS 16.4+');
   const st=new Blob([u]).stream().pipeThrough(new DecompressionStream(fmt));return new Uint8Array(await new Response(st).arrayBuffer())}
 async function unpack(u){
   if(u[0]===0x1f&&u[1]===0x8b){let name=null;
@@ -733,32 +719,32 @@ async function unpack(u){
 async function checkHash(){
   const h=location.hash;if(!/[#&](gz|b64|d)=/.test(h))return false;
   const t0=performance.now();
-  try{let name='лог.csv',payload='';
+  try{let name='log.csv',payload='';
     for(const part of h.slice(1).split('&')){const k=part.indexOf('=');if(k<0)continue;const key=part.slice(0,k),val=part.slice(k+1);
       if(key==='f')name=decodeURIComponent(val)||name;else if(key==='gz'||key==='b64'||key==='d')payload=val}
     if(payload.includes('%'))payload=decodeURIComponent(payload);
-    const r=await unpack(b64bytes(payload));if(r.name&&name==='лог.csv')name=r.name;
+    const r=await unpack(b64bytes(payload));if(r.name&&name==='log.csv')name=r.name;
     name=name.replace(/\.(gz|zip)$/i,'');
     try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
     const text=decode(r.data.buffer.slice(r.data.byteOffset,r.data.byteOffset+r.data.byteLength));
     const log=parseLog(text,name);setLog(log,false);idb.put({name,text});
-    toast(`Открыт из ссылки за ${Math.round(performance.now()-t0)} мс`);return true}
-  catch(err){toast('Ссылка не открылась: '+err.message);return false}
+    toast(`Opened from link in ${Math.round(performance.now()-t0)} ms`);return true}
+  catch(err){toast('Link did not open: '+err.message);return false}
 }
 addEventListener('hashchange',()=>{checkHash()});
 
 /* ---------- iPhone help ---------- */
 function openHelp(){
-  const base=location.origin&&location.origin!=='null'&&/^https?:/.test(location.protocol)?location.origin+location.pathname:'https://<твой-адрес>/';
+  const base=location.origin&&location.origin!=='null'&&/^https?:/.test(location.protocol)?location.origin+location.pathname:'https://<your-address>/';
   const hosted=!/claude|claudeusercontent|localhost|^file/i.test(location.href)&&window.top===window;
-  $('#helpUrl').textContent=(hosted?base:'https://<адрес вьюера на GitHub Pages>/')+'#gz=';
-  $('#helpNote').textContent=hosted?'Адрес уже правильный, скопируй его целиком.':'Адрес появится, когда вьюер будет выложен на GitHub Pages. Отсюда, из Claude, ссылки с логом не работают.';
+  $('#helpUrl').textContent=(hosted?base:'https://<viewer address on GitHub Pages>/')+'#gz=';
+  $('#helpNote').textContent=hosted?'This address is ready, copy it whole.':'Use the GitHub Pages copy of the viewer for this. Links with a log do not open inside Claude.';
   $('#help').hidden=false}
 $('#helpBtn').onclick=openHelp;$('#helpDone').onclick=()=>$('#help').hidden=true;
 $('#help').addEventListener('click',e=>{if(e.target.id==='help')$('#help').hidden=true});
 $('#copyUrl').onclick=()=>{const t=$('#helpUrl').textContent;
-  try{navigator.clipboard.writeText(t).then(()=>toast('Скопировано'),()=>selectUrl())}catch(e){selectUrl()}};
-function selectUrl(){const r=document.createRange();r.selectNodeContents($('#helpUrl'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Выделено, скопируй вручную')}
+  try{navigator.clipboard.writeText(t).then(()=>toast('Copied'),()=>selectUrl())}catch(e){selectUrl()}};
+function selectUrl(){const r=document.createRange();r.selectNodeContents($('#helpUrl'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Selected, copy it manually')}
 
 /* ---------- PWA hooks (no-ops inside the artifact) ---------- */
 async function checkShared(){

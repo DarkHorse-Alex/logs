@@ -160,9 +160,11 @@ header{display:flex;align-items:center;gap:10px;padding-block:8px 6px;background
         <li>Tap <b>ⓘ</b> → turn on <b>Show in Share Sheet</b>. Input types: keep <b>Files</b>.</li>
         <li>Add <b>Make Archive</b>: input <b>Shortcut Input</b>, format <b>.gz</b>.</li>
         <li>Add <b>Base64 Encode</b>, line breaks: <b>None</b>.</li>
-        <li>Add <b>Copy to Clipboard</b> with input <b>Base64 Encoded</b>.</li>
-        <li>Add <b>Open URLs</b> and type the address below into it.</li>
-        <li>When the viewer opens, tap <b>Paste log</b>, then <b>Paste</b>.</li>
+        <li>Add <b>Copy to Clipboard</b> with input <b>Base64 Encoded</b>. This is the backup.</li>
+        <li>Add <b>Replace Text</b>: find <b>+</b>, replace with <b>-</b>, in <b>Base64 Encoded</b>.</li>
+        <li>Add a second <b>Replace Text</b>: find <b>/</b>, replace with <b>_</b>, in <b>Updated Text</b>.</li>
+        <li>Add <b>Open URLs</b>: type the address below, then right after it the variable <b>Updated Text</b>.</li>
+        <li>The log opens by itself. If the link gets cut, tap <b>Paste log</b>, then <b>Paste</b>.</li>
       </ol>
       <div class="url"><code id="helpUrl" class="num"></code><button class="btn" id="copyUrl" type="button">Copy</button></div>
       <p class="note" id="helpNote"></p>
@@ -771,7 +773,7 @@ addEventListener('hashchange',()=>{checkHash()});
 function openHelp(){
   const base=location.origin&&location.origin!=='null'&&/^https?:/.test(location.protocol)?location.origin+location.pathname:'https://<your-address>/';
   const hosted=!/claude|claudeusercontent|localhost|^file/i.test(location.href)&&window.top===window;
-  $('#helpUrl').textContent=(hosted?base:'https://<viewer address on GitHub Pages>/')+'#clip';
+  $('#helpUrl').textContent=(hosted?base:'https://<viewer address on GitHub Pages>/')+'#gz=';
   $('#helpNote').textContent=hosted?'This address is ready, copy it whole.':'Use the GitHub Pages copy of the viewer for this. Links with a log do not open inside Claude.';
   $('#help').hidden=false}
 $('#helpBtn').onclick=openHelp;$('#helpDone').onclick=()=>$('#help').hidden=true;

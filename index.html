@@ -800,7 +800,8 @@ addEventListener('keydown',e=>{if(!S.log||e.target.tagName==='INPUT')return;cons
   else if(e.key==='+'||e.key==='=')setView(S.v0+sp*0.15,S.v1-sp*0.15);else if(e.key==='-')setView(S.v0-sp*0.2,S.v1+sp*0.2);
   else if(e.key==='Escape'){if(!$('#sheet').hidden)closeSheet();$('#help').hidden=true}});
 loadSample();
-(async()=>{if(await checkHash())return;if(await checkShared())return;const last=await idb.get();if(last&&last.text){try{setLog(parseLog(last.text,last.name),false)}catch(e){}}})();
+window.openLogText=(text,name)=>{S.external=true;loadText(String(text),name||'log.csv');return true};
+(async()=>{if(await checkHash())return;if(await checkShared())return;if(S.external)return;const last=await idb.get();if(!S.external&&last&&last.text){try{setLog(parseLog(last.text,last.name),false)}catch(e){}}})();
 </script>
 
 </body>
